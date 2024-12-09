@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "FlightStats": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}
