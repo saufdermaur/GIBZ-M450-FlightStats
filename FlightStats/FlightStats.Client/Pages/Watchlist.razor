@@ -1,0 +1,74 @@
+﻿@page "/watchlist"
+
+<PageTitle>Watchlist</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">Flights Watchlist</MudText>
+<MudText Class="mb-8">Add or remove flights that you want to track</MudText>
+
+@if (flights == null)
+{
+    <MudProgressCircular Color="Color.Default" Indeterminate="true" />
+}
+else
+{
+    <MudTable Items="flights" Hover="true" Breakpoint="Breakpoint.Sm">
+        <HeaderContent>
+            <MudTh>Date</MudTh>
+            <MudTh>Flight Number</MudTh>
+            <MudTh>Departure</MudTh>
+            <MudTh>Arrival</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Date">@context.Date</MudTd>
+            <MudTd DataLabel="Flight Number">@context.FlightNumber</MudTd>
+            <MudTd DataLabel="Departure">@context.Departure</MudTd>
+            <MudTd DataLabel="Arrival">@context.Arrival</MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private List<Flight>? flights = new List<Flight>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Simulate asynchronous loading to demonstrate a loading indicator
+        await Task.Delay(500);
+        flights.Add(new Flight
+            {
+                Date = DateOnly.FromDateTime(DateTime.Today),
+                FlightNumber = "VY 6249",
+                Departure = "Zürich",
+                Arrival = "Barcelona"
+            });
+        flights.Add(new Flight
+            {
+                Date = DateOnly.FromDateTime(DateTime.Today),
+                FlightNumber = "VY 6247",
+                Departure = "Zürich",
+                Arrival = "Barcelona"
+            });
+        flights.Add(new Flight
+            {
+                Date = DateOnly.FromDateTime(DateTime.Today),
+                FlightNumber = "LX 1954",
+                Departure = "Zürich",
+                Arrival = "Barcelona"
+            });
+        flights.Add(new Flight
+            {
+                Date = DateOnly.FromDateTime(DateTime.Today),
+                FlightNumber = "LX 1956",
+                Departure = "Zürich",
+                Arrival = "Barcelona"
+            });
+    }
+
+    private class Flight
+    {
+        public DateOnly Date { get; set; }
+        public string? FlightNumber { get; set; }
+        public string? Departure { get; set; }
+        public string? Arrival { get; set; }
+    }
+}
