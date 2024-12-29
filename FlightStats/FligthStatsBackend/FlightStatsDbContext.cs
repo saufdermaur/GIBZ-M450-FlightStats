@@ -14,9 +14,11 @@ namespace Backend
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Airport>()
-                .HasIndex(a => a.Code)
-                .IsUnique();
+            base.OnModelCreating(modelBuilder);
+
+            var airports = AirportDataLoader.LoadAirports("airports.dat");
+
+            modelBuilder.Entity<Airport>().HasData(airports);
 
             modelBuilder.Entity<Flight>()
                 .HasOne(f => f.Origin)
