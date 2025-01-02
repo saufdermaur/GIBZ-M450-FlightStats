@@ -57,14 +57,19 @@ namespace Backend.Controllers
             return BadRequest(ModelState);
         }
 
-        [HttpGet("{originId}/{destinationId}")]
-        public async Task<IActionResult> GetFlightsForCurrentDayFromOriginAndDestination(int originId, int destinationId)
+        [HttpGet("all")] // date needs to be like: 2025-01-02T15:30:00
+        public async Task<IActionResult> GetAllFlights([FromQuery] int originId, [FromQuery] int destinationId, [FromQuery] DateTime flightDate)
         {
             Airport? airportOrigin = await _context.Airports.FirstOrDefaultAsync(a => a.AirportId == originId);
-            Airport? airportDestination = await _context.Airports.FirstOrDefaultAsync(a=> a.AirportId == destinationId);
+            Airport? airportDestination = await _context.Airports.FirstOrDefaultAsync(a => a.AirportId == destinationId);
+
+            if (airportOrigin == null || airportDestination == null)
+            {
+                return NotFound();
+            }
 
             SeleniumFlights seleniumFlights = new SeleniumFlights();
-            List<FlightDTO> availableFlights = seleniumFlights.GetFlightsFromTodayOriginDestination(airportOrigin, airportDestination);
+            List<FlightDTO> availableFlights = seleniumFlights.GetAllFlights(airportOrigin, airportDestination, flightDate);
 
             if (availableFlights == null)
             {
