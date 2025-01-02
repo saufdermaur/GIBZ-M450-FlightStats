@@ -7,12 +7,12 @@
     {
         public static IEnumerable<Airport> LoadAirports(string filePath)
         {
-            var airports = new List<Airport>();
-            var lines = File.ReadAllLines(filePath);
+            List<Airport> airports = new List<Airport>();
+            string[] lines = File.ReadAllLines(filePath);
 
-            foreach (var line in lines)
+            foreach (string line in lines)
             {
-                var fields = line.Split(',');
+                string[] fields = line.Split(',');
 
                 airports.Add(new Airport
                 {

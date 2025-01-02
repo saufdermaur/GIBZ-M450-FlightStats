@@ -17,3 +17,16 @@ Workflow:
 ---
 
 airport data from: https://openflights.org/data
+
+
+{
+  "originId": 1678,
+  "destinationId": 1382,
+  "flightNumber": "AF 1415",
+  "isBeingTracked": true
+}
+
+
+new york: 3797
+la: 3484
+	

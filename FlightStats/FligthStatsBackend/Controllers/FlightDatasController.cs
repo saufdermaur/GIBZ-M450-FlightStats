@@ -19,7 +19,7 @@ namespace Backend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetFlightDatas()
         {
-            var flightData = await _context.FlightData.Include(f => f.Flight).ToListAsync();
+            List<FlightData> flightData = await _context.FlightData.Include(f => f.Flight).ToListAsync();
             return Ok(flightData);
         }
 
@@ -27,7 +27,7 @@ namespace Backend.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetFlightData(int id)
         {
-            var flightData = await _context.FlightData
+            FlightData? flightData = await _context.FlightData
                 .Include(f => f.Flight)
                 .FirstOrDefaultAsync(m => m.FlightDataId == id);
 
@@ -88,7 +88,7 @@ namespace Backend.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteFlightData(int id)
         {
-            var flightData = await _context.FlightData.FindAsync(id);
+            FlightData? flightData = await _context.FlightData.FindAsync(id);
             if (flightData == null)
             {
                 return NotFound();

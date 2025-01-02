@@ -9,8 +9,8 @@ namespace Shared.DTOs
     public class FlightDTO
     {
         public string? FlightNumber { get; set; }
-        public bool? IsBeingTracked { get; set; } = true;
-
+        public DateTime? FlightDepartureTime { get; set; }
+        public DateTime? FlightArrivalTime { get; set; }
         public required AirportDTO Origin { get; set; }
         public required AirportDTO Destination { get; set; }
     }

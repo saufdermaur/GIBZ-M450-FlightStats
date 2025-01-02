@@ -1,25 +1,17 @@
 using Backend;
 using Hangfire;
-using Hangfire.SqlServer;
+using Hangfire.MySql;
 using Microsoft.EntityFrameworkCore;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-//builder.Services.AddHangfire(config =>
-//    config.SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
-//          .UseSimpleAssemblyNameTypeSerializer()
-//          .UseDefaultTypeSerializer()
-//          .UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection"),
-//              new SqlServerStorageOptions
-//              {
-//                  CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
-//                  SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
-//                  QueuePollInterval = TimeSpan.Zero,
-//                  UseRecommendedIsolationLevel = true,
-//                  DisableGlobalLocks = true
-//              }));
+builder.Services.AddHangfire(configuration => configuration
+     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+     .UseSimpleAssemblyNameTypeSerializer()
+     .UseRecommendedSerializerSettings()
+     .UseStorage(new MySqlStorage(builder.Configuration.GetConnectionString("DefaultConnection"), new MySqlStorageOptions() { TablesPrefix = "Hangfire" })));
 
-//builder.Services.AddHangfireServer();
+builder.Services.AddHangfireServer();
 
 builder.Services.AddDbContext<FlightStatsDbContext>(options =>
     options.UseMySql(
@@ -30,13 +22,15 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseHangfireDashboard();
 
 app.UseHttpsRedirection();
 

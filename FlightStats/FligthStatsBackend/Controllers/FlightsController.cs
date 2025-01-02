@@ -1,6 +1,8 @@
 ﻿using Backend.Models;
+using Backend.Selenium;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Shared.DTOs;
 
 namespace Backend.Controllers
 {
@@ -19,7 +21,7 @@ namespace Backend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetFlights()
         {
-            var flights = await _context.Flights.Include(f => f.Destination).Include(f => f.Origin).ToListAsync();
+            List<Flight> flights = await _context.Flights.Include(f => f.Destination).Include(f => f.Origin).ToListAsync();
             return Ok(flights);
         }
 
@@ -27,7 +29,7 @@ namespace Backend.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetFlight(int id)
         {
-            var flight = await _context.Flights
+            Flight? flight = await _context.Flights
                 .Include(f => f.Destination)
                 .Include(f => f.Origin)
                 .FirstOrDefaultAsync(m => m.FlightId == id);
@@ -53,6 +55,23 @@ namespace Backend.Controllers
             }
 
             return BadRequest(ModelState);
+        }
+
+        [HttpGet("{originId}/{destinationId}")]
+        public async Task<IActionResult> GetFlightsForCurrentDayFromOriginAndDestination(int originId, int destinationId)
+        {
+            Airport? airportOrigin = await _context.Airports.FirstOrDefaultAsync(a => a.AirportId == originId);
+            Airport? airportDestination = await _context.Airports.FirstOrDefaultAsync(a=> a.AirportId == destinationId);
+
+            SeleniumFlights seleniumFlights = new SeleniumFlights();
+            List<FlightDTO> availableFlights = seleniumFlights.GetFlightsFromTodayOriginDestination(airportOrigin, airportDestination);
+
+            if (availableFlights == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(availableFlights);
         }
 
         // PUT: api/Flights/5
@@ -89,7 +108,7 @@ namespace Backend.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteFlight(int id)
         {
-            var flight = await _context.Flights.FindAsync(id);
+            Flight? flight = await _context.Flights.FindAsync(id);
             if (flight == null)
             {
                 return NotFound();

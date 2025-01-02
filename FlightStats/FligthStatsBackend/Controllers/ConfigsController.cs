@@ -19,7 +19,7 @@ namespace Backend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetConfigs()
         {
-            var configs = await _context.Configs.ToListAsync();
+            List<Config> configs = await _context.Configs.ToListAsync();
             return Ok(configs);
         }
 
@@ -27,7 +27,7 @@ namespace Backend.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetConfig(int id)
         {
-            var config = await _context.Configs
+            Config? config = await _context.Configs
                 .FirstOrDefaultAsync(m => m.ConfigId == id);
 
             if (config == null)
@@ -87,7 +87,7 @@ namespace Backend.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteConfig(int id)
         {
-            var config = await _context.Configs.FindAsync(id);
+            Config? config = await _context.Configs.FindAsync(id);
             if (config == null)
             {
                 return NotFound();

@@ -16,7 +16,7 @@ namespace Backend
         {
             base.OnModelCreating(modelBuilder);
 
-            var airports = AirportDataLoader.LoadAirports("airports.dat");
+            IEnumerable<Airport> airports = AirportDataLoader.LoadAirports("airports.dat");
 
             modelBuilder.Entity<Airport>().HasData(airports);
 

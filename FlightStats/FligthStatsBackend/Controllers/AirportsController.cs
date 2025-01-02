@@ -19,7 +19,7 @@ namespace Backend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAirports()
         {
-            var airports = await _context.Airports.ToListAsync();
+            List<Airport> airports = await _context.Airports.ToListAsync();
             return Ok(airports);
         }
 
@@ -27,7 +27,7 @@ namespace Backend.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetAirport(int id)
         {
-            var airport = await _context.Airports
+            Airport? airport = await _context.Airports
                 .FirstOrDefaultAsync(a => a.AirportId == id);
 
             if (airport == null)
@@ -87,7 +87,7 @@ namespace Backend.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAirport(int id)
         {
-            var airport = await _context.Airports.FindAsync(id);
+            Airport? airport = await _context.Airports.FindAsync(id);
             if (airport == null)
             {
                 return NotFound();
