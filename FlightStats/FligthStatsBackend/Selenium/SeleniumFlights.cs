@@ -116,13 +116,18 @@ namespace Backend.Selenium
                     IWebElement flightNumberElement = flightObj.FindElement(By.XPath(".//span[contains(@class, 'Xsgmwe QS0io')]"));
                     string flightNumber = flightNumberElement.Text.Trim();
 
+                    // price 
+                    string price = flightObj.FindElement(By.XPath(".//div[contains(@class, 'BVAVmf I11szd Qr8X4d')]//div[contains(@class, 'YMlIz FpEdX')]/span")).Text;
+                    int number = int.Parse(Regex.Match(price, @"\d+").Value);
+
                     FlightDTO flight = new FlightDTO
                     {
                         Origin = new AirportDTO() { Code = originAirport.IATA, Name = originAirport.Name },
                         Destination = new AirportDTO() { Code = destinationAirport.IATA, Name = destinationAirport.Name },
                         FlightDepartureTime = new DateTime(flightDate.Year, flightDate.Month, flightDate.Day, departureTime.Hour, departureTime.Minute, 0),
                         FlightArrivalTime = new DateTime(flightDate.Year, flightDate.Month, flightDate.Day, arrivalTime.Hour, arrivalTime.Minute, 0),
-                        FlightNumber = flightNumber
+                        FlightNumber = flightNumber,
+                        Price = number
                     };
 
                     FetchedFlights.Add(flight);
@@ -137,6 +142,45 @@ namespace Backend.Selenium
                 webDriver.Quit();
             }
             return FetchedFlights;
+        }
+
+        public FlightDTO GetSpecificFlight(Airport originAirport, Airport destinationAirport, DateTime flightDate, string flightNumber)
+        {
+            FlightDTO flightDTO = new FlightDTO()
+            {
+                Origin = new AirportDTO()
+                {
+                    Code = originAirport.IATA,
+                    Name = originAirport.Name
+                },
+                Destination = new AirportDTO()
+                {
+                    Code = destinationAirport.IATA,
+                    Name = destinationAirport.Name
+                },
+            };
+            try
+            {
+                List<FlightDTO> allFlights = GetAllFlights(originAirport, destinationAirport, flightDate);
+
+                FlightDTO? findFLight = allFlights.Find(_ => _.FlightNumber.Equals(flightNumber));
+
+                if (findFLight != null)
+                {
+                    return findFLight;
+                }
+
+                //what if flight not found? send error message and delete from db?
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            finally
+            {
+                webDriver.Quit();
+            }
+            return flightDTO;
         }
     }
 }
