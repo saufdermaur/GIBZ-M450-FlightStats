@@ -1,4 +1,5 @@
 using Backend;
+using Backend.Selenium;
 using Hangfire;
 using Hangfire.MySql;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +22,8 @@ builder.Services.AddDbContext<FlightStatsDbContext>(options =>
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddScoped<ISeleniumFlights, SeleniumFlights>();
 
 WebApplication app = builder.Build();
 

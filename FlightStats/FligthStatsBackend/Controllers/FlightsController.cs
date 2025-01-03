@@ -12,10 +12,12 @@ namespace Backend.Controllers
     public class FlightsController : ControllerBase
     {
         private readonly FlightStatsDbContext _context;
+        private readonly ISeleniumFlights _seleniumFlights;
 
-        public FlightsController(FlightStatsDbContext context)
+        public FlightsController(FlightStatsDbContext context, ISeleniumFlights selenium)
         {
             _context = context;
+            _seleniumFlights = selenium;
         }
 
         // GET: api/Flights
@@ -43,22 +45,7 @@ namespace Backend.Controllers
             return Ok(flight);
         }
 
-        //// POST: api/Flights
-        //[HttpPost]
-        //public async Task<IActionResult> CreateFlight([FromBody] Flight flight)
-        //{
-        //    if (ModelState.IsValid)
-        //    {
-        //        _context.Flights.Add(flight);
-        //        await _context.SaveChangesAsync();
-
-        //        return CreatedAtAction(nameof(GetFlight), new { id = flight.FlightId }, flight);
-        //    }
-
-        //    return BadRequest(ModelState);
-        //}
-
-        [HttpGet("all")] // date needs to be like: 2025-01-02T15:30:00
+        [HttpGet("GetAllFlights")] // date needs to be like: 2025-01-02T15:30:00
         public async Task<IActionResult> GetAllFlights([FromQuery] int originId, [FromQuery] int destinationId, [FromQuery] DateTime flightDate)
         {
             Airport? airportOrigin = await _context.Airports.FirstOrDefaultAsync(a => a.AirportId == originId);
@@ -69,8 +56,7 @@ namespace Backend.Controllers
                 return NotFound();
             }
 
-            SeleniumFlights seleniumFlights = new SeleniumFlights(_context);
-            List<FlightDTO> availableFlights = seleniumFlights.GetAllFlights(airportOrigin, airportDestination, flightDate);
+            List<FlightDTO> availableFlights = _seleniumFlights.GetAllFlights(airportOrigin, airportDestination, flightDate);
 
             if (availableFlights == null)
             {
@@ -80,31 +66,9 @@ namespace Backend.Controllers
             return Ok(availableFlights);
         }
 
-        [HttpGet("specificFlight")]
-        public async Task<IActionResult> GetSpecificFlight([FromQuery] int originId, [FromQuery] int destinationId, [FromQuery] DateTime flightDate, [FromQuery] string flightNumber)
-        {
-            Airport? airportOrigin = await _context.Airports.FirstOrDefaultAsync(a => a.AirportId == originId);
-            Airport? airportDestination = await _context.Airports.FirstOrDefaultAsync(a => a.AirportId == destinationId);
-
-            if (airportOrigin == null || airportDestination == null)
-            {
-                return NotFound();
-            }
-
-            SeleniumFlights seleniumFlights = new SeleniumFlights(_context);
-            FlightDTO availableFlight = seleniumFlights.GetSpecificFlight(airportOrigin, airportDestination, flightDate, flightNumber);
-
-            if (availableFlight == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(availableFlight);
-        }
-
         // to update a flight, send an already existing "JobForFlight_{flightNumber}" => updated with params
-        [HttpPost]
-        public async Task<IActionResult> NewOrUpdateTrackableFlight([FromQuery] int originId, [FromQuery] int destinationId, [FromQuery] DateTime flightDate, [FromQuery] string flightNumber, [FromQuery] Frequency frequency)
+        [HttpPost("NewOrUpdateJobFlight")]
+        public async Task<IActionResult> NewOrUpdateJobFlight([FromQuery] int originId, [FromQuery] int destinationId, [FromQuery] DateTime flightDate, [FromQuery] string flightNumber, [FromQuery] Frequency frequency)
         {
             Airport? airportOrigin = await _context.Airports.FirstOrDefaultAsync(a => a.AirportId == originId);
             Airport? airportDestination = await _context.Airports.FirstOrDefaultAsync(a => a.AirportId == destinationId);
@@ -137,50 +101,19 @@ namespace Backend.Controllers
                 cronJob = Cron.Monthly;
             }
 
-            SeleniumFlights seleniumFlights = new SeleniumFlights(_context);
-            RecurringJob.AddOrUpdate($"JobForFlight_{flightNumber}", () => seleniumFlights.TrackNewFlight(airportOrigin, airportDestination, flightDate, flightNumber), cronJob);
+            RecurringJob.AddOrUpdate($"JobForFlight_{flightNumber}", () => _seleniumFlights.TrackNewFlight(airportOrigin, airportDestination, flightDate, flightNumber), cronJob);
             return Ok();
         }
 
-        [HttpDelete]
-        public IActionResult DeleteTrackableFlight([FromQuery] string flightNumber)
+        [HttpDelete("DeleteJobFlight")]
+        public IActionResult DeleteJobFlight([FromQuery] string flightNumber)
         {
             RecurringJob.RemoveIfExists($"JobForFlight_{flightNumber}");
             return Ok();
         }
 
-        // PUT: api/Flights/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateFlight(int id, [FromBody] Flight flight)
-        {
-            if (id != flight.FlightId)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(flight).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!FlightExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
-        }
-
         // DELETE: api/Flights/5
-        [HttpDelete("{id}")]
+        [HttpDelete("DeleteJobFlightAndAllInfo,{id}")]
         public async Task<IActionResult> DeleteFlight(int id)
         {
             Flight? flight = await _context.Flights.FindAsync(id);
@@ -191,13 +124,9 @@ namespace Backend.Controllers
 
             _context.Flights.Remove(flight);
             await _context.SaveChangesAsync();
+            RecurringJob.RemoveIfExists($"JobForFlight_{flight.FlightNumber}");
 
             return NoContent();
-        }
-
-        private bool FlightExists(int id)
-        {
-            return _context.Flights.Any(e => e.FlightId == id);
         }
     }
 }

@@ -10,7 +10,7 @@ using WebDriverManager.DriverConfigs.Impl;
 
 namespace Backend.Selenium
 {
-    public class SeleniumFlights
+    public class SeleniumFlights : ISeleniumFlights
     {
         private FirefoxDriver webDriver;
         private readonly FlightStatsDbContext _context;
@@ -18,13 +18,10 @@ namespace Backend.Selenium
         public SeleniumFlights(FlightStatsDbContext context)
         {
             _context = context;
+        }
 
-            new DriverManager().SetUpDriver(new FirefoxConfig());
-
-            //FirefoxOptions firefoxOptions = new FirefoxOptions();
-            //firefoxOptions.AddArguments("--headless");
-            //webDriver = new FirefoxDriver(firefoxOptions);
-
+        public void InitBrowser()
+        {
             webDriver = new FirefoxDriver();
             webDriver.Manage().Window.Maximize();
             webDriver.Navigate().GoToUrl("https://www.google.com/travel/flights");
@@ -97,6 +94,7 @@ namespace Backend.Selenium
 
             try
             {
+                InitBrowser();
                 SearchForFlights(originAirport, destinationAirport, flightDate);
 
                 ReadOnlyCollection<IWebElement> listOfFlights = webDriver.FindElements(By.XPath("(//div[contains(@class,'gQ6yfe m7VU8c')])"));
@@ -109,6 +107,8 @@ namespace Backend.Selenium
 
                     IWebElement detailButton = flightObj.FindElement(By.XPath(".//button[contains(@class, 'VfPpkd-LgbsSe VfPpkd-LgbsSe-OWXEXe-k8QpJ VfPpkd-LgbsSe-OWXEXe-Bz112c-M1Soyc VfPpkd-LgbsSe-OWXEXe-dgl2Hf nCP5yc AjY5Oe LQeN7 nJawce OTelKf')]"));
                     detailButton.Click();
+
+                    Thread.Sleep(500);
 
                     // departure time
                     string fullTextDepart = flightObj.FindElement(By.XPath(".//div[contains(@class, 'dPzsIb AdWm1c y52p7d QS0io')]")).Text;
@@ -152,42 +152,6 @@ namespace Backend.Selenium
             return FetchedFlights;
         }
 
-        public FlightDTO GetSpecificFlight(Airport originAirport, Airport destinationAirport, DateTime flightDate, string flightNumber)
-        {
-            FlightDTO flightDTO = new FlightDTO()
-            {
-                Origin = new AirportDTO()
-                {
-                    Code = originAirport.IATA,
-                    Name = originAirport.Name
-                },
-                Destination = new AirportDTO()
-                {
-                    Code = destinationAirport.IATA,
-                    Name = destinationAirport.Name
-                },
-            };
-            try
-            {
-                List<FlightDTO> allFlights = GetAllFlights(originAirport, destinationAirport, flightDate);
-
-                FlightDTO? findFLight = allFlights.Find(_ => _.FlightNumber.Equals(flightNumber));
-
-                if (findFLight != null)
-                {
-                    return findFLight;
-                }
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-            finally
-            {
-                webDriver.Quit();
-            }
-            return flightDTO;
-        }
         public void TrackNewFlight(Airport originAirport, Airport destinationAirport, DateTime flightDate, string flightNumber)
         {
             try
