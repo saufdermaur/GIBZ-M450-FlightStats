@@ -9,4 +9,13 @@
         public required AirportDTO Destination { get; set; }
         public int Price { get; set; }
     }
+
+    public enum Frequency
+    {
+        Minute,
+        Hour,
+        Day,
+        Week,
+        Month
+    }
 }
