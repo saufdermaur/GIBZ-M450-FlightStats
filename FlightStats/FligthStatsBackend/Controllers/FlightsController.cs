@@ -100,6 +100,14 @@ namespace Backend.Controllers
 
             return Ok(availableFlight);
         }
+
+        //[HttpPost]
+        //public async Task<IActionResult> GetSpecificFlight([FromQuery] int originId, [FromQuery] int destinationId, [FromQuery] DateTime flightDate, string flightNumber)
+        //{
+
+        //}
+
+
         // PUT: api/Flights/5
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateFlight(int id, [FromBody] Flight flight)

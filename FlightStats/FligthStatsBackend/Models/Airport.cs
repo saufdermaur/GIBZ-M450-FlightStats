@@ -11,6 +11,6 @@
         public float Latitude { get; set; } = 0;
         public float Longitude { get; set; } = 0;
         public int Altitude { get; set; } = 0;
-        public required string Timezone {  get; set; }
+        public required string Timezone { get; set; }
     }
 }

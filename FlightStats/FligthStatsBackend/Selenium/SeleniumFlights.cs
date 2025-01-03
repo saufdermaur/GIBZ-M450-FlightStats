@@ -169,8 +169,6 @@ namespace Backend.Selenium
                 {
                     return findFLight;
                 }
-
-                //what if flight not found? send error message and delete from db?
             }
             catch (Exception)
             {
