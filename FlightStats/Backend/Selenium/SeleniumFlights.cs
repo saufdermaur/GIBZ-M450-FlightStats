@@ -10,11 +10,9 @@ namespace Backend.Selenium
     public class SeleniumFlights : ISeleniumFlights
     {
         private readonly IWebDriver _webDriver;
-        private readonly FlightStatsDbContext _context;
 
-        public SeleniumFlights(FlightStatsDbContext context, IWebDriver webDriver)
+        public SeleniumFlights(IWebDriver webDriver)
         {
-            _context = context;
             _webDriver = webDriver;
 
             _webDriver.Manage().Window.Maximize();
@@ -145,64 +143,42 @@ namespace Backend.Selenium
             return FetchedFlights;
         }
 
-        public void TrackNewFlight(Airport originAirport, Airport destinationAirport, DateTime flightDate, string flightNumber)
+        public FlightDTO GetSpecificFlight(Airport originAirport, Airport destinationAirport, DateTime flightDate, string flightNumber)
         {
+            FlightDTO flightDTO = new FlightDTO()
+            {
+                Origin = new AirportDTO()
+                {
+                    Code = originAirport.IATA,
+                    Name = originAirport.Name
+                },
+                Destination = new AirportDTO()
+                {
+                    Code = destinationAirport.IATA,
+                    Name = destinationAirport.Name
+                },
+            };
+
             try
             {
                 List<FlightDTO> allFlights = GetAllFlights(originAirport, destinationAirport, flightDate);
 
-                FlightDTO? findFlight = allFlights.Find(_ => _.FlightNumber.Equals(flightNumber));
+                FlightDTO? findFLight = allFlights.Find(_ => _.FlightNumber.Equals(flightNumber));
 
-                if (findFlight != null)
+                if (findFLight != null)
                 {
-                    FlightData flightData = new FlightData()
-                    {
-                        Flight = null,
-                        FetchedTime = DateTime.Now,
-                        Price = findFlight.Price,
-                    };
-
-                    Flight? dbFlight = _context.Flights.FirstOrDefault(f => f.FlightNumber.Equals(flightNumber));
-
-                    if (dbFlight != null)
-                    {
-                        flightData.Flight = dbFlight;
-                    }
-                    else
-                    {
-                        originAirport = _context.Airports.Local.FirstOrDefault(a => a.AirportId == originAirport.AirportId) ?? _context.Airports.FirstOrDefault(a => a.AirportId == originAirport.AirportId);
-
-                        destinationAirport = _context.Airports.Local.FirstOrDefault(a => a.AirportId == destinationAirport.AirportId) ?? _context.Airports.FirstOrDefault(a => a.AirportId == destinationAirport.AirportId);
-
-                        if (originAirport == null || destinationAirport == null)
-                        {
-                            throw new InvalidOperationException("Origin or destination airport not found in the database.");
-                        }
-
-                        Flight flight = new Flight()
-                        {
-                            Destination = destinationAirport,
-                            Origin = originAirport,
-                            FlightNumber = flightNumber,
-                            FlightDepartureTime = findFlight.FlightDepartureTime,
-                            FlightArrivalTime = findFlight.FlightArrivalTime,
-                        };
-                        flightData.Flight = flight;
-                    }
-
-                    _context.Add(flightData);
-                    _context.SaveChanges();
+                    return findFLight;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error: {ex.Message}");
                 throw;
             }
             finally
             {
                 _webDriver.Quit();
             }
+            return flightDTO;
         }
     }
 }

@@ -70,14 +70,6 @@ namespace Backend.Controllers
         [HttpPost("NewOrUpdateJobFlight")]
         public async Task<IActionResult> NewOrUpdateJobFlight([FromQuery] int originId, [FromQuery] int destinationId, [FromQuery] DateTime flightDate, [FromQuery] string flightNumber, [FromQuery] Frequency frequency)
         {
-            Airport? airportOrigin = await _context.Airports.FirstOrDefaultAsync(a => a.AirportId == originId);
-            Airport? airportDestination = await _context.Airports.FirstOrDefaultAsync(a => a.AirportId == destinationId);
-
-            if (airportOrigin == null || airportDestination == null)
-            {
-                return NotFound();
-            }
-
             Func<string> cronJob;
 
             if (frequency == Frequency.Minute)
@@ -101,8 +93,67 @@ namespace Backend.Controllers
                 cronJob = Cron.Monthly;
             }
 
-            RecurringJob.AddOrUpdate($"JobForFlight_{flightNumber}", () => _seleniumFlights.TrackNewFlight(airportOrigin, airportDestination, flightDate, flightNumber), cronJob);
+            RecurringJob.AddOrUpdate($"JobForFlight_{flightNumber}", () => TrackNewFlightAndSaveJob(originId, destinationId, flightDate, flightNumber), cronJob);
+
             return Ok();
+        }
+
+        [NonAction]
+        public async Task TrackNewFlightAndSaveJob(int originId, int destinationId, DateTime flightDate, string flightNumber)
+        {
+            try
+            {
+                Airport? airportOrigin = await _context.Airports.FirstOrDefaultAsync(a => a.AirportId == originId);
+                Airport? airportDestination = await _context.Airports.FirstOrDefaultAsync(a => a.AirportId == destinationId);
+
+                if (airportOrigin == null || airportDestination == null)
+                {
+                    return;
+                }
+
+                FlightDTO? findFlight = _seleniumFlights.GetSpecificFlight(airportOrigin, airportDestination, flightDate, flightNumber);
+
+                if (findFlight != null)
+                {
+                    FlightData flightData = new FlightData()
+                    {
+                        Flight = null,
+                        FetchedTime = DateTime.Now,
+                        Price = findFlight.Price,
+                    };
+
+                    Flight? dbFlight = _context.Flights.FirstOrDefault(f => f.FlightNumber.Equals(flightNumber));
+
+                    if (dbFlight != null)
+                    {
+                        flightData.Flight = dbFlight;
+                    }
+                    else
+                    {
+                        if (airportOrigin == null || airportDestination == null)
+                        {
+                            throw new InvalidOperationException("Origin or destination airport not found in the database.");
+                        }
+
+                        Flight flight = new Flight()
+                        {
+                            Destination = airportDestination,
+                            Origin = airportOrigin,
+                            FlightNumber = flightNumber,
+                            FlightDepartureTime = findFlight.FlightDepartureTime,
+                            FlightArrivalTime = findFlight.FlightArrivalTime,
+                        };
+                        flightData.Flight = flight;
+                    }
+
+                    _context.Add(flightData);
+                    _context.SaveChanges();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
 
         [HttpDelete("DeleteJobFlight")]
