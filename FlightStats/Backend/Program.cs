@@ -26,7 +26,18 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<ISeleniumFlights, SeleniumFlights>();
-builder.Services.AddScoped<IWebDriver, FirefoxDriver>();
+builder.Services.AddScoped<IWebDriver>(serviceProvider =>
+{
+    FirefoxOptions options = new FirefoxOptions();
+    FirefoxProfile profile = new FirefoxProfile();
+    profile.SetPreference("intl.accept_languages", "de");
+    options.Profile = profile;
+
+    //options.AddArgument("--headless");
+
+    return new FirefoxDriver(options);
+});
+
 
 WebApplication app = builder.Build();
 
