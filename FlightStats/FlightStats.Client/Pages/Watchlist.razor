@@ -17,12 +17,14 @@ else
             <MudTh>Flight Number</MudTh>
             <MudTh>Departure</MudTh>
             <MudTh>Arrival</MudTh>
+            <MudTh>More Info</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Date">@context.Date</MudTd>
             <MudTd DataLabel="Flight Number">@context.FlightNumber</MudTd>
             <MudTd DataLabel="Departure">@context.Departure</MudTd>
             <MudTd DataLabel="Arrival">@context.Arrival</MudTd>
+            <MudTd><MudButton Variant="Variant.Filled" Color="Color.Primary">View</MudButton></MudTd>
         </RowTemplate>
     </MudTable>
 }
