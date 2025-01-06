@@ -1,89 +1,83 @@
 ﻿using Backend.Models;
 using Microsoft.IdentityModel.Tokens;
 using OpenQA.Selenium;
-using OpenQA.Selenium.Firefox;
 using Shared.DTOs;
 using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
-using WebDriverManager;
-using WebDriverManager.DriverConfigs.Impl;
 
 namespace Backend.Selenium
 {
     public class SeleniumFlights : ISeleniumFlights
     {
-        private FirefoxDriver webDriver;
+        private readonly IWebDriver _webDriver;
         private readonly FlightStatsDbContext _context;
 
-        public SeleniumFlights(FlightStatsDbContext context)
+        public SeleniumFlights(FlightStatsDbContext context, IWebDriver webDriver)
         {
             _context = context;
-        }
+            _webDriver = webDriver;
 
-        public void InitBrowser()
-        {
-            webDriver = new FirefoxDriver();
-            webDriver.Manage().Window.Maximize();
-            webDriver.Navigate().GoToUrl("https://www.google.com/travel/flights");
-            webDriver.FindElement(By.XPath("(//span[@jsname='V67aGc'][contains(.,'Alle ablehnen')])[1]")).Click();
+            _webDriver.Manage().Window.Maximize();
+            _webDriver.Navigate().GoToUrl("https://www.google.com/travel/flights");
+            _webDriver.FindElement(By.XPath("(//span[@jsname='V67aGc'][contains(.,'Alle ablehnen')])[1]")).Click();
         }
 
         public void SearchForFlights(Airport originAirport, Airport destinationAirport, DateTime flightDate)
         {
             // Set "One Way" trip
-            IWebElement flightWayField = webDriver.FindElement(By.XPath("//DIV[@class='VfPpkd-aPP78e']/self::DIV"));
+            IWebElement flightWayField = _webDriver.FindElement(By.XPath("//DIV[@class='VfPpkd-aPP78e']/self::DIV"));
             flightWayField.Click();
-            IWebElement flightOneWayField = webDriver.FindElement(By.XPath("(//li[@class='MCs1Pd UbEQCe VfPpkd-OkbHre VfPpkd-OkbHre-SfQLQb-M1Soyc-bN97Pc VfPpkd-aJasdd-RWgCYc-wQNmvb  ib1Udf VfPpkd-rymPhb-ibnC6b VfPpkd-rymPhb-ibnC6b-OWXEXe-SfQLQb-M1Soyc-Bz112c VfPpkd-rymPhb-ibnC6b-OWXEXe-SfQLQb-Woal0c-RWgCYc'][contains(.,'Nur Hinreise')])[1]"));
+            IWebElement flightOneWayField = _webDriver.FindElement(By.XPath("(//li[@class='MCs1Pd UbEQCe VfPpkd-OkbHre VfPpkd-OkbHre-SfQLQb-M1Soyc-bN97Pc VfPpkd-aJasdd-RWgCYc-wQNmvb  ib1Udf VfPpkd-rymPhb-ibnC6b VfPpkd-rymPhb-ibnC6b-OWXEXe-SfQLQb-M1Soyc-Bz112c VfPpkd-rymPhb-ibnC6b-OWXEXe-SfQLQb-Woal0c-RWgCYc'][contains(.,'Nur Hinreise')])[1]"));
             flightOneWayField.Click();
 
             // Enter the origin airport
-            webDriver.FindElement(By.XPath("(//input[contains(@aria-label,'Von wo?')])[1]")).Click();
-            IWebElement originAirportSelenium = webDriver.FindElement(By.XPath("//input[contains(@aria-describedby,'i24')]"));
+            _webDriver.FindElement(By.XPath("(//input[contains(@aria-label,'Von wo?')])[1]")).Click();
+            IWebElement originAirportSelenium = _webDriver.FindElement(By.XPath("//input[contains(@aria-describedby,'i24')]"));
             originAirportSelenium.SendKeys(originAirport.IATA);
             originAirportSelenium.SendKeys(Keys.Enter);
 
             // Enter the destination airport
-            webDriver.FindElement(By.XPath("(//input[contains(@aria-label,'Wohin?')])[1]")).Click();
-            IWebElement destinationAirportSelenium = webDriver.FindElement(By.XPath("(//input[contains(@tabindex,'0')])[2]"));
+            _webDriver.FindElement(By.XPath("(//input[contains(@aria-label,'Wohin?')])[1]")).Click();
+            IWebElement destinationAirportSelenium = _webDriver.FindElement(By.XPath("(//input[contains(@tabindex,'0')])[2]"));
             destinationAirportSelenium.SendKeys(destinationAirport.IATA);
             destinationAirportSelenium.SendKeys(Keys.Enter);
 
             // Enter the departure date
-            IWebElement departureDateField = webDriver.FindElement(By.XPath("(//input[@placeholder='Abflug'])[1]"));
+            IWebElement departureDateField = _webDriver.FindElement(By.XPath("(//input[@placeholder='Abflug'])[1]"));
             departureDateField.Click();
             departureDateField.SendKeys(flightDate.ToString("dd-MM-yyyy"));
-            webDriver.FindElement(By.XPath("(//span[@jsname='V67aGc'][contains(.,'Fertig')])[2]")).Click();
+            _webDriver.FindElement(By.XPath("(//span[@jsname='V67aGc'][contains(.,'Fertig')])[2]")).Click();
 
             // Click on the "Search" button
-            IWebElement searchButton = webDriver.FindElement(By.XPath("//span[contains(text(), 'Suche')]"));
+            IWebElement searchButton = _webDriver.FindElement(By.XPath("//span[contains(text(), 'Suche')]"));
             searchButton.Click();
 
             Thread.Sleep(500);
 
             // Open the "Stops" filter
-            IWebElement stopsFilterButton = webDriver.FindElement(By.XPath("//button[contains(@aria-label, 'Stopps, Nicht ausgewählt')]"));
+            IWebElement stopsFilterButton = _webDriver.FindElement(By.XPath("//button[contains(@aria-label, 'Stopps, Nicht ausgewählt')]"));
             stopsFilterButton.Click();
 
             // Select "Nonstop flights only"
-            IWebElement nonstopFlightsButton = webDriver.FindElement(By.XPath("//label[contains(.,'Nur Nonstop-Flüge')]"));
+            IWebElement nonstopFlightsButton = _webDriver.FindElement(By.XPath("//label[contains(.,'Nur Nonstop-Flüge')]"));
             nonstopFlightsButton.Click();
 
             Thread.Sleep(500);
 
             // Close the "Stops" filter
             stopsFilterButton.Click();
-            webDriver.FindElement(By.XPath("(//span[@jscontroller='rV7Ljf'][contains(.,'Es können optionale Gebühren und Gepäckgebühren anfallen. Informationen zur Passagierbetreuung.')])[1]")).Click();
+            _webDriver.FindElement(By.XPath("(//span[@jscontroller='rV7Ljf'][contains(.,'Es können optionale Gebühren und Gepäckgebühren anfallen. Informationen zur Passagierbetreuung.')])[1]")).Click();
 
             Thread.Sleep(500);
 
             // Filter nach abflugzeit
-            IWebElement sortierButton = webDriver.FindElement(By.XPath("//button[@aria-label='Nach beliebtesten Flügen sortiert, Sortierreihenfolge ändern.']"));
+            IWebElement sortierButton = _webDriver.FindElement(By.XPath("//button[@aria-label='Nach beliebtesten Flügen sortiert, Sortierreihenfolge ändern.']"));
             sortierButton.Click();
             Thread.Sleep(500);
-            IWebElement abflugzeit = webDriver.FindElement(By.XPath("(//span[contains(@class,'VfPpkd-StrnGf-rymPhb-b9t22c')])[3]"));
+            IWebElement abflugzeit = _webDriver.FindElement(By.XPath("(//span[contains(@class,'VfPpkd-StrnGf-rymPhb-b9t22c')])[3]"));
 
             abflugzeit.Click();
-            webDriver.FindElement(By.XPath("(//span[@jscontroller='rV7Ljf'][contains(.,'Es können optionale Gebühren und Gepäckgebühren anfallen. Informationen zur Passagierbetreuung.')])[1]")).Click();
+            _webDriver.FindElement(By.XPath("(//span[@jscontroller='rV7Ljf'][contains(.,'Es können optionale Gebühren und Gepäckgebühren anfallen. Informationen zur Passagierbetreuung.')])[1]")).Click();
 
             Thread.Sleep(1000);
         }
@@ -94,10 +88,9 @@ namespace Backend.Selenium
 
             try
             {
-                InitBrowser();
                 SearchForFlights(originAirport, destinationAirport, flightDate);
 
-                ReadOnlyCollection<IWebElement> listOfFlights = webDriver.FindElements(By.XPath("(//div[contains(@class,'gQ6yfe m7VU8c')])"));
+                ReadOnlyCollection<IWebElement> listOfFlights = _webDriver.FindElements(By.XPath("(//div[contains(@class,'gQ6yfe m7VU8c')])"));
 
                 foreach (IWebElement flightObj in listOfFlights)
                 {
@@ -147,7 +140,7 @@ namespace Backend.Selenium
             }
             finally
             {
-                webDriver.Quit();
+                _webDriver.Quit();
             }
             return FetchedFlights;
         }
@@ -208,7 +201,7 @@ namespace Backend.Selenium
             }
             finally
             {
-                webDriver.Quit();
+                _webDriver.Quit();
             }
         }
     }

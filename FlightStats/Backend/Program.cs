@@ -3,6 +3,8 @@ using Backend.Selenium;
 using Hangfire;
 using Hangfire.MySql;
 using Microsoft.EntityFrameworkCore;
+using OpenQA.Selenium;
+using OpenQA.Selenium.Firefox;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +26,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<ISeleniumFlights, SeleniumFlights>();
+builder.Services.AddScoped<IWebDriver, FirefoxDriver>();
 
 WebApplication app = builder.Build();
 
