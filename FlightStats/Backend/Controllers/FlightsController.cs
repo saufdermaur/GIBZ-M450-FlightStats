@@ -21,7 +21,10 @@ namespace Backend.Controllers
         {
             try
             {
-                List<Flight> flights = await _context.Flights.Include(f => f.Destination).Include(f => f.Origin).ToListAsync();
+                List<Flight> flights = await _context.Flights
+                    .Include(f => f.Destination)
+                    .Include(f => f.Origin)
+                    .ToListAsync();
                 return Ok(flights);
             }
             catch (Exception)
@@ -41,7 +44,10 @@ namespace Backend.Controllers
 
             try
             {
-                Flight? flight = await _context.Flights.Include(f => f.Destination).Include(f => f.Origin).FirstOrDefaultAsync(m => m.FlightId == id);
+                Flight? flight = await _context.Flights
+                    .Include(f => f.Destination)
+                    .Include(f => f.Origin)
+                    .FirstOrDefaultAsync(m => m.FlightId == id);
 
                 if (flight == null)
                 {
