@@ -23,19 +23,19 @@ airport data from: https://openflights.org/data
 Setup:
 
 1. Setup DB
-	1.1 Docker "mysql:latest"
-	1.2 ENV:
+	1. Docker "mysql:latest"
+	2. ENV:
 		MYSQL_ROOT_PASSWORD
 		MYSQL_DATABASE
 		MYSQL_USER
 		MYSQL_PASSWORD
-	1.3 Ports: 3306:3306
-	1.4 Data: /my/own/datadir:/var/lib/mysql
+	3. Ports: 3306:3306
+	4. Data: /my/own/datadir:/var/lib/mysql
 2. Open .sln
-	2.1 Install EF Core (if not already installed): dotnet tool install --global dotnet-ef
-	2.2 Make migration (if not existant in /Backend/Migrations): dotnet ef migrations add InitialCreate
-	2.3 Adjust connection string to credentials (from step 1.) in /Backend/appsettings.json
-	2.4 Update db: dotnet ef database update
+	1. Install EF Core (if not already installed): dotnet tool install --global dotnet-ef
+	2. Make migration (if not existant in /Backend/Migrations): dotnet ef migrations add InitialCreate
+	3. Adjust connection string to credentials (from step 1.) in /Backend/appsettings.json
+	4. Update db: dotnet ef database update
 3. start application (backend) /swagger for api, /hangfire for job overview
 
 ---
