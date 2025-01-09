@@ -14,9 +14,11 @@ namespace Backend
         {
             base.OnModelCreating(modelBuilder);
 
-            IEnumerable<Airport> airports = AirportDataLoader.LoadAirports("airports.dat");
-
-            modelBuilder.Entity<Airport>().HasData(airports);
+            if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+            {
+                IEnumerable<Airport> airports = AirportDataLoader.LoadAirports("airports.dat");
+                modelBuilder.Entity<Airport>().HasData(airports);
+            }
 
             modelBuilder.Entity<Flight>()
                 .HasOne(f => f.Origin)
