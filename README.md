@@ -40,23 +40,12 @@ Setup:
 
 ---
 
-Test Flights
+Test
 
 Origin: 1678 (ZRH)
-Destination: 1218 (BCN)
-DateTime: 2025-06-11T15:30:00
-FlightNumber: -
+Destination: 1382 (CDG)
+DateTime: 2025-01-10T15:30:00
 
-Origin: 1218 (BCN)
-Destination: 3797 (ZRH)
-DateTime: 2025-06-15T15:30:00
-
-
-Origin: 1678 (ZRH)
-Destination: 1229 (MAD)
-DateTime: 2025-06-11T15:30:00
-FlightNumber: -
-
-Origin: 1229 (MAD)
-Destination: 3797 (ZRH)
-DateTime: 2025-06-15T15:30:00
+Origin: 3484 (LAX)
+Destination: 3797 (JFK)
+DateTime: 2025-01-10T15:30:00
