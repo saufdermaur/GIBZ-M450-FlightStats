@@ -112,6 +112,11 @@ namespace Backend.Controllers
                 return BadRequest("Flight number cannot be empty.");
             }
 
+            if (flightDate <= DateTime.Today)
+            {
+                return BadRequest("Flight can't be today or in the past");
+            }
+
             Func<string> cronJob;
 
             if (frequency == Frequency.Minute)
@@ -135,6 +140,7 @@ namespace Backend.Controllers
                 cronJob = Cron.Monthly;
             }
 
+            // TODO: also add jobs for +- 3 days (or variable) for requirement nr.4 (easier) or make it all in one job (more difficult/error-prone). keep in mind when deleting the main-job to also delete the others
             RecurringJob.AddOrUpdate($"JobForFlight_{flightNumber}", () => TrackNewFlightAndSaveJob(originId, destinationId, flightDate, flightNumber), cronJob);
 
             return Ok();
@@ -149,6 +155,13 @@ namespace Backend.Controllers
             {
                 return;
             };
+
+            // if flights date is <= call date, delete job. keep data for stats
+            if (flightDate <= DateTime.Today)
+            {
+                RecurringJob.RemoveIfExists($"JobForFlight_{flightNumber}");
+                return;
+            }
 
             Airport? airportOrigin = await _context.Airports.FindAsync(originId);
             Airport? airportDestination = await _context.Airports.FindAsync(destinationId);
@@ -198,7 +211,7 @@ namespace Backend.Controllers
             await _context.SaveChangesAsync();
         }
 
-        // POST: api/Flights/DeleteJobFlight
+        // DELETE: api/Flights/DeleteJobFlight
         [HttpDelete("DeleteJobFlight")]
         public IActionResult DeleteJobFlight([FromQuery] string flightNumber)
         {
@@ -235,6 +248,129 @@ namespace Backend.Controllers
                 return Ok();
             }
             catch
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request.");
+            }
+        }
+
+
+
+
+
+        // TODO: add stats
+
+
+        // GET: api/Flights/GetCheapestMostExpensiveWeekday
+        [HttpGet("GetCheapestMostExpensiveWeekday,{id}")]
+        public async Task<IActionResult> GetCheapestMostExpensiveWeekday(int id)
+        {
+            if (id <= 0)
+            {
+                return BadRequest("Flight Id must be a positive integer.");
+            }
+
+            try
+            {
+                Flight? flight = await _context.Flights
+                    .Include(f => f.Destination)
+                    .Include(f => f.Origin)
+                    .FirstOrDefaultAsync(m => m.FlightId == id);
+
+                if (flight == null)
+                {
+                    return NotFound($"Flight with Id {id} not found.");
+                }
+
+                return Ok(flight);
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request.");
+            }
+        }
+
+        // GET: api/Flights/GetCheapestMostExpensivetDate
+        [HttpGet("GetCheapestMostExpensivetDate,{id}")]
+        public async Task<IActionResult> GetCheapestMostExpensivetDate(int id)
+        {
+            if (id <= 0)
+            {
+                return BadRequest("Flight Id must be a positive integer.");
+            }
+
+            try
+            {
+                Flight? flight = await _context.Flights
+                    .Include(f => f.Destination)
+                    .Include(f => f.Origin)
+                    .FirstOrDefaultAsync(m => m.FlightId == id);
+
+                if (flight == null)
+                {
+                    return NotFound($"Flight with Id {id} not found.");
+                }
+
+                return Ok(flight);
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request.");
+            }
+        }
+
+        // GET: api/Flights/GetCheapestMostExpensiveDateUntilFlight
+        [HttpGet("GetCheapestMostExpensiveDateUntilFlight,{id}")]
+        public async Task<IActionResult> GetCheapestMostExpensiveDateUntilFlight(int id)
+        {
+            if (id <= 0)
+            {
+                return BadRequest("Flight Id must be a positive integer.");
+            }
+
+            try
+            {
+                Flight? flight = await _context.Flights
+                    .Include(f => f.Destination)
+                    .Include(f => f.Origin)
+                    .FirstOrDefaultAsync(m => m.FlightId == id);
+
+                if (flight == null)
+                {
+                    return NotFound($"Flight with Id {id} not found.");
+                }
+
+                return Ok(flight);
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request.");
+            }
+        }
+
+        // GET: api/Flights/GetCheapestMostExpensiveDateWithFlexibility
+        [HttpGet("GetCheapestMostExpensiveDateWithFlexibility,{id}")]
+        public async Task<IActionResult> GetCheapestMostExpensiveDateWithFlexibility(int id)
+        {
+            if (id <= 0)
+            {
+                return BadRequest("Flight Id must be a positive integer.");
+            }
+
+            try
+            {
+                Flight? flight = await _context.Flights
+                    .Include(f => f.Destination)
+                    .Include(f => f.Origin)
+                    .FirstOrDefaultAsync(m => m.FlightId == id);
+
+                if (flight == null)
+                {
+                    return NotFound($"Flight with Id {id} not found.");
+                }
+
+                return Ok(flight);
+            }
+            catch (Exception)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request.");
             }
