@@ -1,11 +1,14 @@
+using MudBlazor.Services;
 using FlightStats.Client.Pages;
 using FlightStats.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add MudBlazor services
+builder.Services.AddMudServices();
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
 
 var app = builder.Build();
@@ -28,7 +31,6 @@ app.UseStaticFiles();
 app.UseAntiforgery();
 
 app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(FlightStats.Client._Imports).Assembly);
 
