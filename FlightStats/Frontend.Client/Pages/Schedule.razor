@@ -1,0 +1,22 @@
+﻿@page "/schedule"
+
+<PageTitle>Schedule</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">App Schedule</MudText>
+<MudText Class="mb-8">Configure the schedule for fetching the latest flight data</MudText>
+
+<MudSelect @bind-Value="frequency" Variant="Variant.Outlined" Label="Frequency">
+    @foreach (var option in Enum.GetValues<Frequency>())
+    {
+        <MudSelectItem Value="option">@Enum.GetName(typeof(Frequency), option)</MudSelectItem>
+    }
+</MudSelect>
+
+@code {
+    private Frequency frequency;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+}
