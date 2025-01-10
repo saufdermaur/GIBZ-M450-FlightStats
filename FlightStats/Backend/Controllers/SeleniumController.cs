@@ -10,9 +10,10 @@ namespace Backend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class FlightsController(FlightStatsDbContext context) : ControllerBase
+    public class SeleniumController(FlightStatsDbContext context, ISeleniumFlights selenium) : ControllerBase
     {
         private readonly FlightStatsDbContext _context = context;
+        private readonly ISeleniumFlights _seleniumFlights = selenium;
 
         // GET: api/Flights
         [HttpGet]
@@ -24,7 +25,7 @@ namespace Backend.Controllers
                     .Include(f => f.Destination)
                     .Include(f => f.Origin)
                     .ToListAsync();
-                return Ok(flights.Select(f => FlightToDTO(f)));
+                return Ok(flights);
             }
             catch (Exception)
             {
@@ -54,6 +55,40 @@ namespace Backend.Controllers
                 }
 
                 return Ok(flight);
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request.");
+            }
+        }
+
+        // GET: api/Flights/GetAllFlights
+        [HttpGet("GetAllFlights")] // date needs to be like: 2025-01-02T15:30:00
+        public async Task<IActionResult> GetAllFlights([FromQuery] int originId, [FromQuery] int destinationId, [FromQuery] DateTime flightDate)
+        {
+            if (originId <= 0 || destinationId <= 0)
+            {
+                return BadRequest("Origin and destination Ids must be positive integers.");
+            }
+
+            try
+            {
+                Airport? airportOrigin = await _context.Airports.FirstOrDefaultAsync(a => a.AirportId == originId);
+                Airport? airportDestination = await _context.Airports.FirstOrDefaultAsync(a => a.AirportId == destinationId);
+
+                if (airportOrigin == null || airportDestination == null)
+                {
+                    return NotFound("One or both airports not found.");
+                }
+
+                List<FlightDTO> availableFlights = _seleniumFlights.GetAllFlights(airportOrigin, airportDestination, flightDate);
+
+                if (availableFlights == null)
+                {
+                    return NotFound("No flights found");
+                }
+
+                return Ok(availableFlights);
             }
             catch (Exception)
             {
@@ -116,7 +151,64 @@ namespace Backend.Controllers
         [NonAction]
         public async Task TrackNewFlightAndSaveJob(int originId, int destinationId, DateTime flightDate, string flightNumber)
         {
-            
+            if (originId <= 0 || destinationId <= 0 || flightNumber.IsNullOrEmpty())
+            {
+                return;
+            };
+
+            // if flights date is <= call date, delete job. keep data for stats
+            if (flightDate <= DateTime.Today)
+            {
+                RecurringJob.RemoveIfExists($"JobForFlight_{flightNumber}");
+                return;
+            }
+
+            Airport? airportOrigin = await _context.Airports.FindAsync(originId);
+            Airport? airportDestination = await _context.Airports.FindAsync(destinationId);
+
+            if (airportOrigin == null || airportDestination == null)
+            {
+                return;
+            }
+
+            FlightDTO flightDetails = _seleniumFlights.GetSpecificFlight(airportOrigin, airportDestination, flightDate, flightNumber);
+
+            if (flightDetails == null)
+            {
+                return;
+            }
+
+            FlightData flightData = new FlightData
+            {
+                Flight = null,
+                FetchedTime = DateTime.Now,
+                Price = flightDetails.Price,
+            };
+
+            Flight? dbFlight = await _context.Flights.FirstOrDefaultAsync(f => f.FlightNumber == flightNumber);
+
+            if (dbFlight != null)
+            {
+                flightData.Flight = dbFlight;
+            }
+            else
+            {
+                Flight newFlight = new Flight
+                {
+                    Destination = airportDestination,
+                    Origin = airportOrigin,
+                    FlightNumber = flightNumber,
+                    FlightDepartureTime = flightDetails.FlightDepartureTime,
+                    FlightArrivalTime = flightDetails.FlightArrivalTime,
+                };
+
+                flightData.Flight = newFlight;
+
+                await _context.Flights.AddAsync(newFlight);
+            }
+
+            await _context.FlightData.AddAsync(flightData);
+            await _context.SaveChangesAsync();
         }
 
         // DELETE: api/Flights/DeleteJobFlight
@@ -282,41 +374,6 @@ namespace Backend.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request.");
             }
-        }
-
-        private FlightDTO FlightToDTO(Flight flight)
-        {
-            return new FlightDTO
-            {
-                FlightId = flight.FlightId,
-                FlightNumber = flight.FlightNumber,
-                FlightDepartureTime = flight.FlightDepartureTime,
-                FlightArrivalTime = flight.FlightArrivalTime,
-                Origin = AirportToDTO(flight.Origin),
-                Destination = AirportToDTO(flight.Destination),
-                Price = 0
-            };
-        }
-            
-        private FlightDataDTO FlightDataToDTO (FlightData flightData)
-        {
-            return new FlightDataDTO
-            {
-                FlightDataId = flightData.FlightDataId,
-                FlightId = flightData.FlightId,
-                FetchedTime = flightData.FetchedTime,
-                Price = flightData.Price,
-                Flight = FlightToDTO(flightData.Flight)
-            };
-        }
-
-        private AirportDTO AirportToDTO (Airport airport)
-        {
-            return new AirportDTO
-            {
-                Name = airport.Name,
-                Code = airport.IATA
-            };
         }
     }
 }

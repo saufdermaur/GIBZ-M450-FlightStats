@@ -2,6 +2,7 @@
 {
     public class FlightDTO
     {
+        public int FlightId { get; set; }
         public string? FlightNumber { get; set; }
         public DateTime? FlightDepartureTime { get; set; }
         public DateTime? FlightArrivalTime { get; set; }
