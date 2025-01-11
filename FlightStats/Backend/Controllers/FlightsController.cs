@@ -180,8 +180,20 @@ namespace Backend.Controllers
                 }
 
                 List<FlightData> flightDatas = await _context.FlightData.Where(f => f.FlightId == id).ToListAsync();
+                List<FlightData> flightDates = flightDatas.DistinctBy(_ => _.FetchedTime.Date).ToList();
 
-                return Ok(flightDatas.Select(f => FlightDataToDayPrice(f)));
+                List<DayPrice> values = [];
+
+                foreach (FlightData dayDatas in flightDates)
+                {
+                    int min = flightDatas.Where(_ => _.FetchedTime.Date.Equals(dayDatas.FetchedTime.Date)).Select(_ => _.Price).First();
+                    double avg = flightDatas.Where(_ => _.FetchedTime.Date.Equals(dayDatas.FetchedTime.Date)).Select(_ => _.Price).Average();
+                    int max = flightDatas.Where(_ => _.FetchedTime.Date.Equals(dayDatas.FetchedTime.Date)).Select(_ => _.Price).Last();
+
+                    values.Add(new DayPrice() { Day = dayDatas.FetchedTime.Date, Min = min, Avg = avg, Max = max });
+                }
+
+                return Ok(values);
             }
             catch (Exception)
             {
@@ -232,7 +244,7 @@ namespace Backend.Controllers
         {
             return new DayPrice
             {
-                Day = flightData.FetchedTime,
+                Day = flightData.FetchedTime.Date,
                 Avg = flightData.Price
             };
         }
