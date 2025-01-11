@@ -18,14 +18,17 @@ else
             <MudTh>Flight Number</MudTh>
             <MudTh>Departure</MudTh>
             <MudTh>Arrival</MudTh>
-            <MudTh>More Info</MudTh>
+            <MudTh></MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd DataLabel="Date">@context.FlightDepartureTime</MudTd>
+            <MudTd DataLabel="Date">@context.FlightDepartureTime.Date.ToString("d")</MudTd>
             <MudTd DataLabel="Flight Number">@context.FlightNumber</MudTd>
             <MudTd DataLabel="Departure">@context.Origin.Name</MudTd>
             <MudTd DataLabel="Arrival">@context.Destination.Name</MudTd>
-            <MudTd><MudButton Variant="Variant.Filled" Color="Color.Primary">View</MudButton></MudTd>
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.QueryStats"></MudIconButton>
+                <MudIconButton Icon="@Icons.Material.Filled.Settings"></MudIconButton>
+            </MudTd>
         </RowTemplate>
     </MudTable>
 }

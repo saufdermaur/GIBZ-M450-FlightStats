@@ -1,0 +1,60 @@
+﻿@page "/settings/{id}"
+
+<PageTitle>Schedule</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">App Schedule</MudText>
+<MudText Class="mb-8">Configure the schedule for fetching the latest flight data</MudText>
+
+<MudSelect @bind-Value="schedule" Placeholder="Select a schedule" Variant="Variant.Outlined" Label="Schedule">
+    <MudSelectItem Value="@("minute")">Every Minute</MudSelectItem>
+    <MudSelectItem Value="@("hour")">Every Hour</MudSelectItem>
+    <MudSelectItem Value="@("day")">Every Day of the Month</MudSelectItem>
+    <MudSelectItem Value="@("weekday")">Every Weekday</MudSelectItem>
+</MudSelect>
+
+@if (schedule == "minute" || schedule == "hour") {
+    <MudSelect @bind-Value="frequency" Placeholder="Select a frequency" Variant="Variant.Outlined" Label="Minutes">
+        <MudSelectItem Value="15">Every 15 minutes</MudSelectItem>
+        <MudSelectItem Value="30">Every 30 minutes</MudSelectItem>
+        <MudSelectItem Value="60">Every hour</MudSelectItem>
+        <MudSelectItem Value="120">Every 2 hours</MudSelectItem>
+        <MudSelectItem Value="240">Every 4 hours</MudSelectItem>
+    </MudSelect>
+} else if (schedule == "day") {
+    <MudDatePicker Label="Day" @bind-Date="day" FixYear="@DateTime.Today.Year" FixMonth="@DateTime.Today.Month" DateFormat="dd" />
+    if (day is not null)
+    {
+        <MudTimePicker Label="Time" @bind-Time="time" TimeEditMode="TimeEditMode.Normal" />
+    }
+} else if (schedule == "weekday") {
+    <MudSelect @bind-Value="weekday" Placeholder="Select a weekday" Variant="Variant.Outlined" Label="Week day">
+        <MudSelectItem Value="@("Monday")">Monday</MudSelectItem>
+        <MudSelectItem Value="@("Tuesday")">Tuesday</MudSelectItem>
+        <MudSelectItem Value="@("Wednesday")">Wednesday</MudSelectItem>
+        <MudSelectItem Value="@("Thursday")">Thursday</MudSelectItem>
+        <MudSelectItem Value="@("Friday")">Friday</MudSelectItem>
+        <MudSelectItem Value="@("Saturday")">Saturday</MudSelectItem>
+        <MudSelectItem Value="@("Sunday")">Sunday</MudSelectItem>
+    </MudSelect>
+    if (weekday != "" && weekday is not null) {
+        <MudTimePicker Label="Time" @bind-Time="time" TimeEditMode="TimeEditMode.Normal" />
+    }
+} else {
+
+}
+
+@code {
+    [Parameter]
+    public string Id { get; set; }
+    private String cronExpression;
+    private string schedule;
+    private int frequency;
+    private DateTime? day;
+    private string weekday;
+    private TimeSpan? time;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+}
