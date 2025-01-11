@@ -1,4 +1,5 @@
 ﻿@page "/watchlist"
+@using System.Text.Json
 
 <PageTitle>Watchlist</PageTitle>
 
@@ -20,57 +21,31 @@ else
             <MudTh>More Info</MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd DataLabel="Date">@context.Date</MudTd>
+            <MudTd DataLabel="Date">@context.FlightDepartureTime</MudTd>
             <MudTd DataLabel="Flight Number">@context.FlightNumber</MudTd>
-            <MudTd DataLabel="Departure">@context.Departure</MudTd>
-            <MudTd DataLabel="Arrival">@context.Arrival</MudTd>
+            <MudTd DataLabel="Departure">@context.Origin.Name</MudTd>
+            <MudTd DataLabel="Arrival">@context.Destination.Name</MudTd>
             <MudTd><MudButton Variant="Variant.Filled" Color="Color.Primary">View</MudButton></MudTd>
         </RowTemplate>
     </MudTable>
 }
 
 @code {
-    private List<Flight>? flights = new List<Flight>();
+    private HttpClient Http = new HttpClient();
+    private List<FlightDTO>? flights = new List<FlightDTO>();
 
-    protected override async Task OnInitializedAsync()
-    {
-        // Simulate asynchronous loading to demonstrate a loading indicator
-        await Task.Delay(500);
-        flights.Add(new Flight
-            {
-                Date = DateOnly.FromDateTime(DateTime.Today),
-                FlightNumber = "VY 6249",
-                Departure = "Zürich",
-                Arrival = "Barcelona"
-            });
-        flights.Add(new Flight
-            {
-                Date = DateOnly.FromDateTime(DateTime.Today),
-                FlightNumber = "VY 6247",
-                Departure = "Zürich",
-                Arrival = "Barcelona"
-            });
-        flights.Add(new Flight
-            {
-                Date = DateOnly.FromDateTime(DateTime.Today),
-                FlightNumber = "LX 1954",
-                Departure = "Zürich",
-                Arrival = "Barcelona"
-            });
-        flights.Add(new Flight
-            {
-                Date = DateOnly.FromDateTime(DateTime.Today),
-                FlightNumber = "LX 1956",
-                Departure = "Zürich",
-                Arrival = "Barcelona"
-            });
-    }
+    protected override async Task OnInitializedAsync() => await GetFlights();
 
-    private class Flight
-    {
-        public DateOnly Date { get; set; }
-        public string? FlightNumber { get; set; }
-        public string? Departure { get; set; }
-        public string? Arrival { get; set; }
+    private async Task GetFlights() {
+        var response = await Http.GetAsync("https://localhost:7019/api/Flights");
+        if (response.IsSuccessStatusCode) {
+            var content = await response.Content.ReadAsStringAsync();
+            flights = JsonSerializer.Deserialize<List<FlightDTO>>(content, new JsonSerializerOptions{PropertyNameCaseInsensitive = true});
+            foreach (FlightDTO flight in flights){
+                Console.WriteLine(flight.FlightNumber);
+            }
+        } else {
+            Console.WriteLine(response.StatusCode);
+        }
     }
 }

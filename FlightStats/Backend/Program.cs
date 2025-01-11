@@ -22,6 +22,17 @@ builder.Services.AddDbContext<FlightStatsDbContext>(options =>
         new MySqlServerVersion(new Version(9, 1, 0))));
 
 builder.Services.AddControllers();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", builder =>
+    {
+        builder.AllowAnyOrigin()
+               .AllowAnyHeader()
+               .AllowAnyMethod();
+    });
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -50,6 +61,8 @@ if (app.Environment.IsDevelopment())
 app.UseHangfireDashboard();
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowAll");
 
 app.UseAuthorization();
 
