@@ -14,9 +14,11 @@ namespace Backend
         {
             base.OnModelCreating(modelBuilder);
 
-            IEnumerable<Airport> airports = AirportDataLoader.LoadAirports("airports.dat");
-
-            modelBuilder.Entity<Airport>().HasData(airports);
+            if (File.Exists("airports.dat"))
+            {
+                IEnumerable<Airport> airports = AirportDataLoader.LoadAirports("airports.dat");
+                modelBuilder.Entity<Airport>().HasData(airports);
+            }
 
             modelBuilder.Entity<Flight>()
                 .HasOne(f => f.Origin)
