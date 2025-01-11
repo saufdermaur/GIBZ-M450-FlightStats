@@ -1,9 +1,6 @@
 ﻿using Backend.Models;
-using Backend.Selenium;
-using Hangfire;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Shared.DTOs;
 
 namespace Backend.Controllers
@@ -61,107 +58,6 @@ namespace Backend.Controllers
             }
         }
 
-        // to update a flight, send an already existing "JobForFlight_{flightNumber}" => updated with params
-        // no try catch because no db or other critical component, hangfire has own exception handling
-        // POST: api/Flights/NewOrUpdateJobFlight
-        [HttpPost("NewOrUpdateJobFlight")]
-        public IActionResult NewOrUpdateJobFlight([FromQuery] int originId, [FromQuery] int destinationId, [FromQuery] DateTime flightDate, [FromQuery] string flightNumber, [FromQuery] Frequency frequency)
-        {
-            if (originId <= 0 || destinationId <= 0)
-            {
-                return BadRequest("Origin and destination Ids must be positive integers.");
-            };
-
-            if (string.IsNullOrWhiteSpace(flightNumber))
-            {
-                return BadRequest("Flight number cannot be empty.");
-            }
-
-            if (flightDate <= DateTime.Today)
-            {
-                return BadRequest("Flight can't be today or in the past");
-            }
-
-            Func<string> cronJob;
-
-            if (frequency == Frequency.Minute)
-            {
-                cronJob = Cron.Minutely;
-            }
-            else if (frequency == Frequency.Hour)
-            {
-                cronJob = Cron.Hourly;
-            }
-            else if (frequency == Frequency.Day)
-            {
-                cronJob = Cron.Daily;
-            }
-            else if (frequency == Frequency.Week)
-            {
-                cronJob = Cron.Weekly;
-            }
-            else
-            {
-                cronJob = Cron.Monthly;
-            }
-
-            // TODO: also add jobs for +- 3 days (or variable) for requirement nr.4 (easier) or make it all in one job (more difficult/error-prone). keep in mind when deleting the main-job to also delete the others
-            RecurringJob.AddOrUpdate($"JobForFlight_{flightNumber}", () => TrackNewFlightAndSaveJob(originId, destinationId, flightDate, flightNumber), cronJob);
-
-            return Ok();
-        }
-
-        // no try catch because hangfire has own exception handling
-        // public because of hangfire
-        [NonAction]
-        public async Task TrackNewFlightAndSaveJob(int originId, int destinationId, DateTime flightDate, string flightNumber)
-        {
-            
-        }
-
-        // DELETE: api/Flights/DeleteJobFlight
-        [HttpDelete("DeleteJobFlight")]
-        public IActionResult DeleteJobFlight([FromQuery] string flightNumber)
-        {
-            if (string.IsNullOrWhiteSpace(flightNumber))
-            {
-                return BadRequest("Flight number is required.");
-            }
-
-            RecurringJob.RemoveIfExists($"JobForFlight_{flightNumber}");
-            return Ok();
-        }
-
-        // DELETE: api/Flights/DeleteJobFlightAndAllInfo,5
-        [HttpDelete("DeleteJobFlightAndAllInfo,{id}")]
-        public async Task<IActionResult> DeleteFlight(int id)
-        {
-            if (id <= 0)
-            {
-                return BadRequest("Id must be a positive integer");
-            }
-
-            try
-            {
-                Flight? flight = await _context.Flights.FindAsync(id);
-
-                if (flight == null)
-                {
-                    return NotFound($"Couldn't find a flight with Id {id}");
-                }
-
-                _context.Flights.Remove(flight);
-                await _context.SaveChangesAsync();
-                RecurringJob.RemoveIfExists($"JobForFlight_{flight.FlightNumber}");
-                return Ok();
-            }
-            catch
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request.");
-            }
-        }
-
-
 
 
 
@@ -197,9 +93,9 @@ namespace Backend.Controllers
             }
         }
 
-        // GET: api/Flights/GetCheapestMostExpensivetDate
-        [HttpGet("GetCheapestMostExpensivetDate,{id}")]
-        public async Task<IActionResult> GetCheapestMostExpensivetDate(int id)
+        // GET: api/Flights/GetCheapestMostExpensiveDate
+        [HttpGet("GetCheapestMostExpensiveDate,{id}")]
+        public async Task<IActionResult> GetCheapestMostExpensiveDate(int id)
         {
             if (id <= 0)
             {
@@ -297,8 +193,8 @@ namespace Backend.Controllers
                 Price = 0
             };
         }
-            
-        private FlightDataDTO FlightDataToDTO (FlightData flightData)
+
+        private FlightDataDTO FlightDataToDTO(FlightData flightData)
         {
             return new FlightDataDTO
             {
@@ -310,7 +206,7 @@ namespace Backend.Controllers
             };
         }
 
-        private AirportDTO AirportToDTO (Airport airport)
+        private AirportDTO AirportToDTO(Airport airport)
         {
             return new AirportDTO
             {
