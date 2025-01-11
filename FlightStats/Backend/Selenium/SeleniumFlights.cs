@@ -138,7 +138,7 @@ namespace Backend.Selenium
             }
             finally
             {
-                _webDriver.Quit();
+                //_webDriver.Quit();
             }
             return FetchedFlights;
         }
@@ -176,9 +176,48 @@ namespace Backend.Selenium
             }
             finally
             {
-                _webDriver.Quit();
+                //_webDriver.Quit();
             }
             return flightDTO;
+        }
+
+        public List<DayPrice> GetSpeGetCheapestMostExpensiveDateWithFlexibilitycificFlight(Airport originAirport, Airport destinationAirport, DateTime flightDate, string flightNumber, int flexibility)
+        {
+            List<DayPrice> dayPrices = new List<DayPrice>();
+
+            try
+            {
+                for (int i = -flexibility; i < flexibility; i++)
+                {
+                    DateTime date = flightDate.AddDays(i);
+                    if (date > DateTime.Now)
+                    {
+                        FlightDTO flightDetails = GetSpecificFlight(originAirport, destinationAirport, date, flightNumber);
+
+
+
+                        dayPrices.Add(FlightDataToDayPrice(flightDetails));
+                    }
+                }
+                return dayPrices;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            finally
+            {
+                _webDriver.Quit();
+            }
+        }
+
+        private static DayPrice FlightDataToDayPrice(FlightDTO flightData)
+        {
+            return new DayPrice
+            {
+                Day = flightData.FlightDepartureTime,
+                Avg = flightData.Price
+            };
         }
     }
 }

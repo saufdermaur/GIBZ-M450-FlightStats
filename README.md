@@ -45,18 +45,20 @@ Test Flights
 Origin: 1678 (ZRH)
 Destination: 1218 (BCN)
 DateTime: 2025-06-11T15:30:00
-FlightNumber: -
+FlightNumber: VY 6249
 
 Origin: 1218 (BCN)
-Destination: 3797 (ZRH)
+Destination: 1678 (ZRH)
 DateTime: 2025-06-15T15:30:00
+FlightNumber: VY 6246
 
 
 Origin: 1678 (ZRH)
 Destination: 1229 (MAD)
 DateTime: 2025-06-11T15:30:00
-FlightNumber: -
+FlightNumber: IB 634
 
 Origin: 1229 (MAD)
-Destination: 3797 (ZRH)
+Destination: 1678 (ZRH)
 DateTime: 2025-06-15T15:30:00
+FlightNumber: IB 627

@@ -11,6 +11,8 @@ namespace Backend.Controllers
     {
         private readonly FlightStatsDbContext _context = context;
 
+        #region GeneralEndpoints
+
         // GET: api/Flights
         [HttpGet]
         public async Task<IActionResult> GetFlights()
@@ -50,7 +52,7 @@ namespace Backend.Controllers
                     return NotFound($"Flight with Id {id} not found.");
                 }
 
-                return Ok(flight);
+                return Ok(FlightToDTO(flight));
             }
             catch (Exception)
             {
@@ -58,11 +60,9 @@ namespace Backend.Controllers
             }
         }
 
+        #endregion
 
-
-
-        // TODO: add stats
-
+        #region StatsEndpoints
 
         // GET: api/Flights/GetCheapestMostExpensiveWeekday
         [HttpGet("GetCheapestMostExpensiveWeekday,{id}")]
@@ -85,7 +85,27 @@ namespace Backend.Controllers
                     return NotFound($"Flight with Id {id} not found.");
                 }
 
-                return Ok(flight);
+                List<FlightData> flightDatas = await _context.FlightData.Where(f => f.FlightId == id).ToListAsync();
+                List<DayPrice> values = new List<DayPrice>() { };
+
+                foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
+                {
+                    List<FlightData> dayDatas = flightDatas.Where(_ => _.FetchedTime.DayOfWeek == day).OrderBy(_ => _.Price).ToList();
+
+                    if (dayDatas.Count <= 0)
+                    {
+                        values.Add(new DayPrice() { Day = GetDateFromWeekDay(day), Min = 0, Avg = 0, Max = 0 });
+                    }
+                    else
+                    {
+                        int min = dayDatas.FirstOrDefault().Price;
+                        double avg = dayDatas.Select(_ => _.Price).Average();
+                        int max = dayDatas.LastOrDefault().Price;
+                        values.Add(new DayPrice() { Day = GetDateFromWeekDay(day), Min = min, Avg = avg, Max = max });
+                    }
+                }
+
+                return Ok(values);
             }
             catch (Exception)
             {
@@ -114,7 +134,18 @@ namespace Backend.Controllers
                     return NotFound($"Flight with Id {id} not found.");
                 }
 
-                return Ok(flight);
+                List<FlightData> values = await _context.FlightData.Where(f => f.FlightId == id).OrderBy(_ => _.Price).ToListAsync();
+
+                var cheapest = values.FirstOrDefault();
+                var mostExpensive = values.LastOrDefault();
+
+                List<DayPrice> lowestHighest =
+                [
+                    new DayPrice() { Day = cheapest.FetchedTime, Min = 0, Avg = cheapest.Price, Max = 0 },
+                    new DayPrice() { Day = mostExpensive.FetchedTime, Min = 0, Avg = mostExpensive.Price, Max = 0 }
+                ];
+
+                return Ok(lowestHighest);
             }
             catch (Exception)
             {
@@ -143,7 +174,9 @@ namespace Backend.Controllers
                     return NotFound($"Flight with Id {id} not found.");
                 }
 
-                return Ok(flight);
+                List<FlightData> flightDatas = await _context.FlightData.Where(f => f.FlightId == id).ToListAsync();
+
+                return Ok(flightDatas.Select(f => FlightDataToDayPrice(f)));
             }
             catch (Exception)
             {
@@ -151,35 +184,11 @@ namespace Backend.Controllers
             }
         }
 
-        // GET: api/Flights/GetCheapestMostExpensiveDateWithFlexibility
-        [HttpGet("GetCheapestMostExpensiveDateWithFlexibility,{id}")]
-        public async Task<IActionResult> GetCheapestMostExpensiveDateWithFlexibility(int id)
-        {
-            if (id <= 0)
-            {
-                return BadRequest("Flight Id must be a positive integer.");
-            }
 
-            try
-            {
-                Flight? flight = await _context.Flights
-                    .Include(f => f.Destination)
-                    .Include(f => f.Origin)
-                    .FirstOrDefaultAsync(m => m.FlightId == id);
 
-                if (flight == null)
-                {
-                    return NotFound($"Flight with Id {id} not found.");
-                }
+        #endregion
 
-                return Ok(flight);
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request.");
-            }
-        }
-
+        #region HelperMethods
         private FlightDTO FlightToDTO(Flight flight)
         {
             return new FlightDTO
@@ -214,5 +223,23 @@ namespace Backend.Controllers
                 Code = airport.IATA
             };
         }
+
+        private DayPrice FlightDataToDayPrice(FlightData flightData)
+        {
+            return new DayPrice
+            {
+                Day = flightData.FetchedTime,
+                Avg = flightData.Price
+            };
+        }
+
+        private DateTime GetDateFromWeekDay(DayOfWeek dayOfWeek)
+        {
+            DateTime date = DateTime.Today;
+            int offset = date.DayOfWeek - dayOfWeek;
+            return date.AddDays(-offset);
+        }
+
+        #endregion
     }
 }

@@ -15,6 +15,8 @@ namespace Backend.Controllers
         private readonly FlightStatsDbContext _context = context;
         private readonly ISeleniumFlights _seleniumFlights = selenium;
 
+        #region GeneralEndpoints
+
         // GET: api/Flights/GetAllFlights
         [HttpGet("GetAllFlights")] // date needs to be like: 2025-01-02T15:30:00
         public async Task<IActionResult> GetAllFlights([FromQuery] int originId, [FromQuery] int destinationId, [FromQuery] DateTime flightDate)
@@ -205,5 +207,53 @@ namespace Backend.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request.");
             }
         }
+
+        #endregion
+
+        #region StatsEndpoints
+
+        // GET: api/Flights/GetCheapestMostExpensiveDateWithFlexibility
+        [HttpGet("GetCheapestMostExpensiveDateWithFlexibility")]
+        public async Task<IActionResult> GetCheapestMostExpensiveDateWithFlexibility([FromQuery] int originId, [FromQuery] int destinationId, [FromQuery] DateTime flightDate, [FromQuery] string flightNumber, [FromQuery] int flexibility)
+        {
+            if (originId <= 0 || destinationId <= 0 || flightNumber.IsNullOrEmpty())
+            {
+                return BadRequest();
+            };
+
+            if (flexibility <= 0 || flexibility > 5)
+            {
+                return BadRequest("Flexibility must be between 1 and 5");
+            }
+
+            // if flights date is <= call date, delete job. keep data for stats
+            if (flightDate <= DateTime.Today)
+            {
+                return BadRequest();
+            }
+
+            Airport? airportOrigin = await _context.Airports.FindAsync(originId);
+            Airport? airportDestination = await _context.Airports.FindAsync(destinationId);
+
+            if (airportOrigin == null || airportDestination == null)
+            {
+                return BadRequest();
+            }
+
+            try
+            {
+            // find solution for disposed object...
+
+                List<DayPrice> dayPrices = _seleniumFlights.GetSpeGetCheapestMostExpensiveDateWithFlexibilitycificFlight(airportOrigin, airportDestination, flightDate, flightNumber, flexibility);
+
+            return Ok(dayPrices);
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request.");
+            }
+        }
+
+        #endregion
     }
 }
