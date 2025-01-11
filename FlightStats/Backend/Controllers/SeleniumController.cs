@@ -242,11 +242,9 @@ namespace Backend.Controllers
 
             try
             {
-            // find solution for disposed object...
-
                 List<DayPrice> dayPrices = _seleniumFlights.GetSpeGetCheapestMostExpensiveDateWithFlexibilitycificFlight(airportOrigin, airportDestination, flightDate, flightNumber, flexibility);
 
-            return Ok(dayPrices);
+                return Ok(dayPrices);
             }
             catch (Exception)
             {

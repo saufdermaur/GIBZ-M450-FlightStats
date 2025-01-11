@@ -10,6 +10,7 @@ namespace Backend.Selenium
     public class SeleniumFlights : ISeleniumFlights
     {
         private readonly IWebDriver _webDriver;
+        private bool _quit = true; 
 
         public SeleniumFlights(IWebDriver webDriver)
         {
@@ -138,7 +139,8 @@ namespace Backend.Selenium
             }
             finally
             {
-                //_webDriver.Quit();
+                if (_quit)
+                    _webDriver.Quit();
             }
             return FetchedFlights;
         }
@@ -176,7 +178,8 @@ namespace Backend.Selenium
             }
             finally
             {
-                //_webDriver.Quit();
+                if (_quit)
+                    _webDriver.Quit();
             }
             return flightDTO;
         }
@@ -187,16 +190,15 @@ namespace Backend.Selenium
 
             try
             {
-                for (int i = -flexibility; i < flexibility; i++)
+                for (int i = -flexibility; i <= flexibility; i++)
                 {
                     DateTime date = flightDate.AddDays(i);
                     if (date > DateTime.Now)
                     {
+                        _quit = false;
                         FlightDTO flightDetails = GetSpecificFlight(originAirport, destinationAirport, date, flightNumber);
-
-
-
                         dayPrices.Add(FlightDataToDayPrice(flightDetails));
+                        _webDriver.Navigate().GoToUrl("https://www.google.com/travel/flights");
                     }
                 }
                 return dayPrices;
@@ -207,10 +209,12 @@ namespace Backend.Selenium
             }
             finally
             {
+                _quit = true;
                 _webDriver.Quit();
             }
         }
 
+        #region HelperMethods
         private static DayPrice FlightDataToDayPrice(FlightDTO flightData)
         {
             return new DayPrice
@@ -219,5 +223,7 @@ namespace Backend.Selenium
                 Avg = flightData.Price
             };
         }
+
+        #endregion
     }
 }
