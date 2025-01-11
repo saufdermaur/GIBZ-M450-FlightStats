@@ -3,7 +3,7 @@
     public class FlightDTO
     {
         public int FlightId { get; set; }
-        public string? FlightNumber { get; set; }
+        public required string FlightNumber { get; set; }
         public DateTime FlightDepartureTime { get; set; }
         public DateTime FlightArrivalTime { get; set; }
         public required AirportDTO Origin { get; set; }

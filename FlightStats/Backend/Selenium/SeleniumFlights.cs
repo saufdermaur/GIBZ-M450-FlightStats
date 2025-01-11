@@ -10,7 +10,7 @@ namespace Backend.Selenium
     public class SeleniumFlights : ISeleniumFlights
     {
         private readonly IWebDriver _webDriver;
-        private bool _quit = true; 
+        private bool _quit = true;
 
         public SeleniumFlights(IWebDriver webDriver)
         {
@@ -145,29 +145,15 @@ namespace Backend.Selenium
             return FetchedFlights;
         }
 
-        public FlightDTO GetSpecificFlight(Airport originAirport, Airport destinationAirport, DateTime flightDate, string flightNumber)
+        public FlightDTO? GetSpecificFlight(Airport originAirport, Airport destinationAirport, DateTime flightDate, string flightNumber)
         {
-            FlightDTO flightDTO = new FlightDTO()
-            {
-                Origin = new AirportDTO()
-                {
-                    Code = originAirport.IATA,
-                    Name = originAirport.Name
-                },
-                Destination = new AirportDTO()
-                {
-                    Code = destinationAirport.IATA,
-                    Name = destinationAirport.Name
-                },
-            };
-
             try
             {
                 List<FlightDTO> allFlights = GetAllFlights(originAirport, destinationAirport, flightDate);
 
                 FlightDTO? findFLight = allFlights.Find(_ => _.FlightNumber.Equals(flightNumber));
 
-                if (findFLight != null)
+                if (findFLight is not null)
                 {
                     return findFLight;
                 }
@@ -181,7 +167,7 @@ namespace Backend.Selenium
                 if (_quit)
                     _webDriver.Quit();
             }
-            return flightDTO;
+            return null;
         }
 
         public List<DayPrice> GetSpeGetCheapestMostExpensiveDateWithFlexibilitycificFlight(Airport originAirport, Airport destinationAirport, DateTime flightDate, string flightNumber, int flexibility)
@@ -196,8 +182,13 @@ namespace Backend.Selenium
                     if (date > DateTime.Now)
                     {
                         _quit = false;
-                        FlightDTO flightDetails = GetSpecificFlight(originAirport, destinationAirport, date, flightNumber);
-                        dayPrices.Add(FlightDataToDayPrice(flightDetails));
+                        FlightDTO? flightDetails = GetSpecificFlight(originAirport, destinationAirport, date, flightNumber);
+
+                        if (flightDetails is not null)
+                        {
+                            dayPrices.Add(FlightDataToDayPrice(flightDetails));
+                        }
+
                         _webDriver.Navigate().GoToUrl("https://www.google.com/travel/flights");
                     }
                 }
@@ -215,6 +206,7 @@ namespace Backend.Selenium
         }
 
         #region HelperMethods
+
         private static DayPrice FlightDataToDayPrice(FlightDTO flightData)
         {
             return new DayPrice

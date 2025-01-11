@@ -31,14 +31,14 @@ namespace Backend.Controllers
                 Airport? airportOrigin = await _context.Airports.FirstOrDefaultAsync(a => a.AirportId == originId);
                 Airport? airportDestination = await _context.Airports.FirstOrDefaultAsync(a => a.AirportId == destinationId);
 
-                if (airportOrigin == null || airportDestination == null)
+                if (airportOrigin is null || airportDestination is null)
                 {
                     return NotFound("One or both airports not found.");
                 }
 
                 List<FlightDTO> availableFlights = _seleniumFlights.GetAllFlights(airportOrigin, airportDestination, flightDate);
 
-                if (availableFlights == null)
+                if (availableFlights is null)
                 {
                     return NotFound("No flights found");
                 }
@@ -55,7 +55,7 @@ namespace Backend.Controllers
         // no try catch because no db or other critical component, hangfire has own exception handling
         // POST: api/Flights/NewOrUpdateJobFlight
         [HttpPost("NewOrUpdateJobFlight")]
-        public IActionResult NewOrUpdateJobFlight([FromQuery] int originId, [FromQuery] int destinationId, [FromQuery] DateTime flightDate, [FromQuery] string flightNumber, [FromQuery] Frequency frequency)
+        public async Task<IActionResult> NewOrUpdateJobFlightAsync([FromQuery] int originId, [FromQuery] int destinationId, [FromQuery] DateTime flightDate, [FromQuery] string flightNumber, [FromQuery] Frequency frequency)
         {
             if (originId <= 0 || destinationId <= 0)
             {
@@ -70,6 +70,21 @@ namespace Backend.Controllers
             if (flightDate <= DateTime.Today)
             {
                 return BadRequest("Flight can't be today or in the past");
+            }
+
+            Airport? airportOrigin = await _context.Airports.FindAsync(originId);
+            Airport? airportDestination = await _context.Airports.FindAsync(destinationId);
+
+            if (airportOrigin is null || airportDestination is null)
+            {
+                return NotFound("Origin or destination not found.");
+            }
+
+            FlightDTO? flightDetails = _seleniumFlights.GetSpecificFlight(airportOrigin, airportDestination, flightDate, flightNumber);
+
+            if (flightDetails is null)
+            {
+                return NotFound("Flight couldn't be found.");
             }
 
             Func<string> cronJob;
@@ -95,7 +110,6 @@ namespace Backend.Controllers
                 cronJob = Cron.Monthly;
             }
 
-            // TODO: also add jobs for +- 3 days (or variable) for requirement nr.4 (easier) or make it all in one job (more difficult/error-prone). keep in mind when deleting the main-job to also delete the others
             RecurringJob.AddOrUpdate($"JobForFlight_{flightNumber}", () => TrackNewFlightAndSaveJob(originId, destinationId, flightDate, flightNumber), cronJob);
 
             return Ok();
@@ -121,46 +135,40 @@ namespace Backend.Controllers
             Airport? airportOrigin = await _context.Airports.FindAsync(originId);
             Airport? airportDestination = await _context.Airports.FindAsync(destinationId);
 
-            if (airportOrigin == null || airportDestination == null)
+            if (airportOrigin is null || airportDestination is null)
             {
                 return;
             }
 
-            FlightDTO flightDetails = _seleniumFlights.GetSpecificFlight(airportOrigin, airportDestination, flightDate, flightNumber);
+            FlightDTO? flightDetails = _seleniumFlights.GetSpecificFlight(airportOrigin, airportDestination, flightDate, flightNumber);
 
-            if (flightDetails == null)
+            if (flightDetails is null)
             {
                 return;
             }
-
-            FlightData flightData = new FlightData
-            {
-                Flight = null,
-                FetchedTime = DateTime.Now,
-                Price = flightDetails.Price,
-            };
 
             Flight? dbFlight = await _context.Flights.FirstOrDefaultAsync(f => f.FlightNumber == flightNumber);
 
-            if (dbFlight != null)
+            Flight flight = dbFlight ?? new Flight
             {
-                flightData.Flight = dbFlight;
-            }
-            else
+                Destination = airportDestination,
+                Origin = airportOrigin,
+                FlightNumber = flightNumber,
+                FlightDepartureTime = flightDetails.FlightDepartureTime,
+                FlightArrivalTime = flightDetails.FlightArrivalTime,
+            };
+
+            if (dbFlight is null)
             {
-                Flight newFlight = new Flight
-                {
-                    Destination = airportDestination,
-                    Origin = airportOrigin,
-                    FlightNumber = flightNumber,
-                    FlightDepartureTime = flightDetails.FlightDepartureTime,
-                    FlightArrivalTime = flightDetails.FlightArrivalTime,
-                };
-
-                flightData.Flight = newFlight;
-
-                await _context.Flights.AddAsync(newFlight);
+                await _context.Flights.AddAsync(flight);
             }
+
+            FlightData flightData = new()
+            {
+                Flight = flight,
+                FetchedTime = DateTime.Now,
+                Price = flightDetails.Price,
+            };
 
             await _context.FlightData.AddAsync(flightData);
             await _context.SaveChangesAsync();
@@ -192,7 +200,7 @@ namespace Backend.Controllers
             {
                 Flight? flight = await _context.Flights.FindAsync(id);
 
-                if (flight == null)
+                if (flight is null)
                 {
                     return NotFound($"Couldn't find a flight with Id {id}");
                 }
@@ -216,28 +224,32 @@ namespace Backend.Controllers
         [HttpGet("GetCheapestMostExpensiveDateWithFlexibility")]
         public async Task<IActionResult> GetCheapestMostExpensiveDateWithFlexibility([FromQuery] int originId, [FromQuery] int destinationId, [FromQuery] DateTime flightDate, [FromQuery] string flightNumber, [FromQuery] int flexibility)
         {
-            if (originId <= 0 || destinationId <= 0 || flightNumber.IsNullOrEmpty())
+            if (originId <= 0 || destinationId <= 0)
             {
-                return BadRequest();
+                return BadRequest("Origin and destination Ids must be positive integers.");
             };
+
+            if (flightNumber.IsNullOrEmpty())
+            {
+                return BadRequest("Flight number can't be null or empty.");
+            }
 
             if (flexibility <= 0 || flexibility > 5)
             {
-                return BadRequest("Flexibility must be between 1 and 5");
+                return BadRequest("Flexibility must be between 1 and 5.");
             }
 
-            // if flights date is <= call date, delete job. keep data for stats
             if (flightDate <= DateTime.Today)
             {
-                return BadRequest();
+                return BadRequest("Flight can't be today or in the past");
             }
 
             Airport? airportOrigin = await _context.Airports.FindAsync(originId);
             Airport? airportDestination = await _context.Airports.FindAsync(destinationId);
 
-            if (airportOrigin == null || airportDestination == null)
+            if (airportOrigin is null || airportDestination is null)
             {
-                return BadRequest();
+                return NotFound("One or both airports not found.");
             }
 
             try

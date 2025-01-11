@@ -47,7 +47,7 @@ namespace Backend.Controllers
                     .Include(f => f.Origin)
                     .FirstOrDefaultAsync(m => m.FlightId == id);
 
-                if (flight == null)
+                if (flight is null)
                 {
                     return NotFound($"Flight with Id {id} not found.");
                 }
@@ -80,13 +80,13 @@ namespace Backend.Controllers
                     .Include(f => f.Origin)
                     .FirstOrDefaultAsync(m => m.FlightId == id);
 
-                if (flight == null)
+                if (flight is null)
                 {
                     return NotFound($"Flight with Id {id} not found.");
                 }
 
                 List<FlightData> flightDatas = await _context.FlightData.Where(f => f.FlightId == id).ToListAsync();
-                List<DayPrice> values = new List<DayPrice>() { };
+                List<DayPrice> values = [];
 
                 foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
                 {
@@ -98,9 +98,9 @@ namespace Backend.Controllers
                     }
                     else
                     {
-                        int min = dayDatas.FirstOrDefault().Price;
+                        int min = dayDatas.First().Price;
                         double avg = dayDatas.Select(_ => _.Price).Average();
-                        int max = dayDatas.LastOrDefault().Price;
+                        int max = dayDatas.Last().Price;
                         values.Add(new DayPrice() { Day = GetDateFromWeekDay(day), Min = min, Avg = avg, Max = max });
                     }
                 }
@@ -129,20 +129,25 @@ namespace Backend.Controllers
                     .Include(f => f.Origin)
                     .FirstOrDefaultAsync(m => m.FlightId == id);
 
-                if (flight == null)
+                if (flight is null)
                 {
                     return NotFound($"Flight with Id {id} not found.");
                 }
 
                 List<FlightData> values = await _context.FlightData.Where(f => f.FlightId == id).OrderBy(_ => _.Price).ToListAsync();
 
-                var cheapest = values.FirstOrDefault();
-                var mostExpensive = values.LastOrDefault();
+                FlightData? cheapest = values.FirstOrDefault();
+                FlightData? mostExpensive = values.LastOrDefault();
+
+                if (cheapest is null || mostExpensive is null)
+                {
+                    return NotFound();
+                }
 
                 List<DayPrice> lowestHighest =
                 [
-                    new DayPrice() { Day = cheapest.FetchedTime, Min = 0, Avg = cheapest.Price, Max = 0 },
-                    new DayPrice() { Day = mostExpensive.FetchedTime, Min = 0, Avg = mostExpensive.Price, Max = 0 }
+                    FlightDataToDayPrice(cheapest),
+                    FlightDataToDayPrice(mostExpensive)
                 ];
 
                 return Ok(lowestHighest);
@@ -169,7 +174,7 @@ namespace Backend.Controllers
                     .Include(f => f.Origin)
                     .FirstOrDefaultAsync(m => m.FlightId == id);
 
-                if (flight == null)
+                if (flight is null)
                 {
                     return NotFound($"Flight with Id {id} not found.");
                 }
@@ -184,12 +189,11 @@ namespace Backend.Controllers
             }
         }
 
-
-
         #endregion
 
         #region HelperMethods
-        private FlightDTO FlightToDTO(Flight flight)
+
+        private static FlightDTO FlightToDTO(Flight flight)
         {
             return new FlightDTO
             {
@@ -203,7 +207,7 @@ namespace Backend.Controllers
             };
         }
 
-        private FlightDataDTO FlightDataToDTO(FlightData flightData)
+        private static FlightDataDTO FlightDataToDTO(FlightData flightData)
         {
             return new FlightDataDTO
             {
@@ -215,7 +219,7 @@ namespace Backend.Controllers
             };
         }
 
-        private AirportDTO AirportToDTO(Airport airport)
+        private static AirportDTO AirportToDTO(Airport airport)
         {
             return new AirportDTO
             {
@@ -224,7 +228,7 @@ namespace Backend.Controllers
             };
         }
 
-        private DayPrice FlightDataToDayPrice(FlightData flightData)
+        private static DayPrice FlightDataToDayPrice(FlightData flightData)
         {
             return new DayPrice
             {
@@ -233,7 +237,7 @@ namespace Backend.Controllers
             };
         }
 
-        private DateTime GetDateFromWeekDay(DayOfWeek dayOfWeek)
+        private static DateTime GetDateFromWeekDay(DayOfWeek dayOfWeek)
         {
             DateTime date = DateTime.Today;
             int offset = date.DayOfWeek - dayOfWeek;
