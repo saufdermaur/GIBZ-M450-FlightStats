@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using Shared.DTOs;
 
 namespace Backend.Tests
 {
@@ -69,7 +70,7 @@ namespace Backend.Tests
             Assert.IsNotNull(result);
             Assert.AreEqual(200, result.StatusCode);
 
-            List<Airport>? airports = result.Value as List<Airport>;
+            List<AirportDTO>? airports = result.Value as List<AirportDTO>;
             Assert.IsNotNull(airports);
             Assert.AreEqual(2, airports.Count);
         }

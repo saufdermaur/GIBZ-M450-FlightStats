@@ -7,7 +7,7 @@
 <MudText Typo="Typo.h3" GutterBottom="true">Flights Watchlist</MudText>
 <MudText Class="mb-8">Add new flights, modify tracking schedules and get price statistics</MudText>
 
-<MudButton Class="mb-3" Variant="Variant.Filled" Color="Color.Success">Add new flight</MudButton>
+<MudButton Class="mb-3" Variant="Variant.Filled" Color="Color.Success" OnClick="() => NavigateToAddFlight()">Add new flight</MudButton>
 <br />
 
 @if (flights == null)
@@ -64,5 +64,10 @@ else
     private void NavigateToStatistic(int id)
     {
         NavigationManager.NavigateTo($"statistic/{id}");
+    }
+
+    private void NavigateToAddFlight()
+    {
+        NavigationManager.NavigateTo("add");
     }
 }

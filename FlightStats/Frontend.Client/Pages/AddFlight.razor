@@ -1,0 +1,70 @@
+﻿@page "/add"
+@using System.Text.Json
+@inject NavigationManager NavigationManager
+
+<PageTitle>Watchlist</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">Add Flight</MudText>
+<MudText Class="mb-8">Add a new flight. The flight must have the correct flight number, departure time and departure/arrival airports.</MudText>
+
+<MudCard>
+    <MudCardContent>
+        <MudAutocomplete T="AirportDTO"
+                         Label="Search Departure Airport"
+                         @bind-Value="origin"
+                         Placeholder="Type Airport Name, IATA code or city..."
+                         SearchFunc="SearchAirport"
+                         ToStringFunc="@((AirportDTO a) => $"{a.Name} ({a.Code})")"
+                         ItemSelected />
+        <MudAutocomplete T="AirportDTO"
+                         Label="Search Arrival Airport"
+                         @bind-Value="destination"
+                         Placeholder="Type Airport Name, IATA code or city..."
+                         SearchFunc="SearchAirport"
+                         ToStringFunc="@((AirportDTO a) => $"{a.Name} ({a.Code})")"
+                         ItemSelected />
+        
+    </MudCardContent>
+    <MudCardActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Add Flight</MudButton>
+    </MudCardActions>
+</MudCard>
+
+
+@code {
+    private HttpClient Http = new HttpClient();
+    private AirportDTO origin = null;
+    private AirportDTO destination = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+
+
+    private async Task<IEnumerable<AirportDTO>> SearchAirport(string query, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(query))
+        {
+            return Array.Empty<AirportDTO>();
+        }
+
+        try
+        {
+            var response = await Http.GetFromJsonAsync<List<AirportDTO>>($"https://localhost:7019/api/Airports/search?query={query}");
+            if (response is not null)
+            {
+                Console.WriteLine(response);
+                return response;
+            }
+            else
+            {
+                return Array.Empty<AirportDTO>();
+            }
+        } catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching airports: {ex.Message}");
+            return Array.Empty<AirportDTO>();
+        }
+    }
+}
