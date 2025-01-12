@@ -235,6 +235,7 @@ namespace Backend.Controllers
         {
             return new AirportDTO
             {
+                AirportId = airport.AirportId,
                 Name = airport.Name,
                 Code = airport.IATA
             };

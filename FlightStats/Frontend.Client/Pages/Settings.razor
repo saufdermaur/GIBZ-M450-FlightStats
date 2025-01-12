@@ -1,10 +1,13 @@
 ﻿@page "/settings/{id:int}"
 @using System.Text.Json
+@inject NavigationManager NavigationManager
 
 <PageTitle>Schedule</PageTitle>
 
 <MudText Typo="Typo.h3" GutterBottom="true">App Schedule</MudText>
 <MudText Class="mb-8">Configure the schedule for fetching the latest flight data</MudText>
+
+<MudText Class="mb-3" Typo="Typo.h4">Update Schedule</MudText>
 
 <MudSelect @bind-Value="schedule" Placeholder="Select a schedule" Variant="Variant.Outlined" Label="Schedule">
     <MudSelectItem Value="@("minute")">Per Minute</MudSelectItem>
@@ -52,7 +55,7 @@ else if (schedule == "hour")
 @if (DisplayUpdateButton())
 {
     <br />
-    <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Update" OnClick="() => UpdateSchedule()">Update Schedule</MudButton>
+    <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Update" OnClick="async () => await UpdateSchedule()">Update Schedule</MudButton>
 }
 
 
@@ -75,6 +78,8 @@ else if (schedule == "hour")
         {
             var content = await response.Content.ReadAsStringAsync();
             flight = JsonSerializer.Deserialize<FlightDTO>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            Console.WriteLine($"ORIGIN ID {flight.Origin.AirportId}");
+            Console.WriteLine($"DESTINATION ID {flight.Destination.AirportId}");
         }
     }
 
@@ -86,11 +91,21 @@ else if (schedule == "hour")
                (schedule == "weekday" && weekday != null && time != null);
     }
 
-    private bool UpdateSchedule()
+    private async Task UpdateSchedule()
     {
         string cronExpression = GenerateCronExpression();
-        Console.WriteLine(cronExpression);
-        return true;
+        var queryParams = new Dictionary<string, string>
+            {
+                { "originId", flight.Origin.AirportId.ToString() },
+                { "destinationId", flight.Destination.AirportId.ToString() },
+                { "flightDate", flight.FlightDepartureTime.ToString("s") },
+                { "flightNumber", flight.FlightNumber },
+                { "cronExpression", cronExpression }
+            };
+        var queryString = string.Join("&", queryParams.Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value)}"));
+        Console.WriteLine(queryString);
+        var response = await Http.PostAsync($"https://localhost:7019/api/selenium/neworupdatejobflight?{queryString}", null);
+        NavigationManager.NavigateTo("/watchlist");
 
     }
 
