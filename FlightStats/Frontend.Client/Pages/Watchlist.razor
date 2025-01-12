@@ -1,5 +1,6 @@
 ﻿@page "/watchlist"
 @using System.Text.Json
+@inject NavigationManager NavigationManager
 
 <PageTitle>Watchlist</PageTitle>
 
@@ -26,8 +27,8 @@ else
             <MudTd DataLabel="Departure">@context.Origin.Name</MudTd>
             <MudTd DataLabel="Arrival">@context.Destination.Name</MudTd>
             <MudTd>
-                <MudIconButton Icon="@Icons.Material.Filled.QueryStats"></MudIconButton>
-                <MudIconButton Icon="@Icons.Material.Filled.Settings"></MudIconButton>
+                <MudIconButton Icon="@Icons.Material.Filled.QueryStats" OnClick="() => NavigateToStatistic(context.FlightId)"></MudIconButton>
+                <MudIconButton Icon="@Icons.Material.Filled.Settings" OnClick="() => NavigateToSettings(context.FlightId)"></MudIconButton>
             </MudTd>
         </RowTemplate>
     </MudTable>
@@ -50,5 +51,15 @@ else
         } else {
             Console.WriteLine(response.StatusCode);
         }
+    }
+
+    private void NavigateToSettings(int id)
+    {
+        NavigationManager.NavigateTo($"settings/{id}");
+    }
+
+    private void NavigateToStatistic(int id)
+    {
+        NavigationManager.NavigateTo($"statistic/{id}");
     }
 }
