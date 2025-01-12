@@ -231,7 +231,7 @@ namespace Backend.Controllers
             };
         }
 
-        private static AirportDTO AirportToDTO(Airport airport)
+        public static AirportDTO AirportToDTO(Airport airport)
         {
             return new AirportDTO
             {
@@ -249,7 +249,7 @@ namespace Backend.Controllers
             };
         }
 
-        private static DateTime GetDateFromWeekDay(DayOfWeek dayOfWeek)
+        public static DateTime GetDateFromWeekDay(DayOfWeek dayOfWeek)
         {
             DateTime date = DateTime.Today;
             int offset = date.DayOfWeek - dayOfWeek;

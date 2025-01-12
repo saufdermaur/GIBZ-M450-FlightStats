@@ -1,7 +1,9 @@
 ﻿using Backend.Controllers;
 using Backend.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 
 namespace Backend.Tests
 {
@@ -19,7 +21,7 @@ namespace Backend.Tests
                 .UseInMemoryDatabase(databaseName)
                 .Options;
 
-            FlightStatsDbContext dbContext = new FlightStatsDbContext(options);
+            FlightStatsDbContext dbContext = new(options);
 
             dbContext.Airports.AddRange(
                 new Airport
@@ -85,6 +87,24 @@ namespace Backend.Tests
             Assert.IsNotNull(result);
             Assert.AreEqual(400, result.StatusCode);
             Assert.AreEqual("Query parameter is required.", result.Value);
+        }
+
+        [TestMethod]
+        public async Task SearchAirports_ReturnsInternalServerErrorOnException()
+        {
+            // Arrange
+            string query = "asdf";
+            Mock<FlightStatsDbContext> mockDbContext = new(new DbContextOptions<FlightStatsDbContext>());
+            mockDbContext.Setup(m => m.Airports).Throws(new Exception());
+            AirportsController controller = new(mockDbContext.Object);
+
+            // Act
+            IActionResult result = await controller.SearchAirports(query);
+
+            // Assert
+            ObjectResult? objectResult = result as ObjectResult;
+            Assert.IsNotNull(objectResult);
+            Assert.AreEqual(StatusCodes.Status500InternalServerError, objectResult.StatusCode);
         }
     }
 }

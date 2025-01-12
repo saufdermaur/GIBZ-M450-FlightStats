@@ -6,9 +6,9 @@ namespace Backend
     public class FlightStatsDbContext : DbContext
     {
         public FlightStatsDbContext(DbContextOptions<FlightStatsDbContext> options) : base(options) { }
-        public DbSet<Airport> Airports { get; set; }
-        public DbSet<Flight> Flights { get; set; }
-        public DbSet<FlightData> FlightData { get; set; }
+        public virtual DbSet<Airport> Airports { get; set; }
+        public virtual DbSet<Flight> Flights { get; set; }
+        public virtual DbSet<FlightData> FlightData { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -189,7 +189,7 @@ namespace Backend.Controllers
 
         // DELETE: api/Flights/DeleteJobFlightAndAllInfo,5
         [HttpDelete("DeleteJobFlightAndAllInfo,{id}")]
-        public async Task<IActionResult> DeleteFlight(int id)
+        public async Task<IActionResult> DeleteJobFlightAndAllInfo(int id)
         {
             if (id <= 0)
             {
