@@ -1,10 +1,12 @@
-﻿@page "/statistic"
+﻿@page "/statistic/{id:int}"
 
 <PageTitle>Statistics</PageTitle>
 
 <MudText Typo="Typo.h3" GutterBottom="true">Flight Statistics</MudText>
 <MudText Class="mb-8">Get various statistics for your tracked flights</MudText>
+<h1>Statistics for @Id</h1>
 
 @code {
-
+    [Parameter]
+    public int Id { get; set; }
 }

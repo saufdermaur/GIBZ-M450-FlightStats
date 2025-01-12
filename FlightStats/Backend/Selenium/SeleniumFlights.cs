@@ -10,7 +10,7 @@ namespace Backend.Selenium
     public class SeleniumFlights : ISeleniumFlights
     {
         private readonly IWebDriver _webDriver;
-        private bool _quit = true; 
+        private bool _quit = true;
 
         public SeleniumFlights(IWebDriver webDriver)
         {
