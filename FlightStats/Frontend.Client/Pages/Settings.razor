@@ -82,8 +82,6 @@ else if (schedule == "hour")
         {
             var content = await response.Content.ReadAsStringAsync();
             flight = JsonSerializer.Deserialize<FlightDTO>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            Console.WriteLine($"ORIGIN ID {flight.Origin.AirportId}");
-            Console.WriteLine($"DESTINATION ID {flight.Destination.AirportId}");
         }
     }
 

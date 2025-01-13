@@ -1,12 +1,114 @@
 ﻿@page "/statistic/{id:int}"
+@using System.Text.Json
 
 <PageTitle>Statistics</PageTitle>
 
 <MudText Typo="Typo.h3" GutterBottom="true">Flight Statistics</MudText>
 <MudText Class="mb-8">Get various statistics for your tracked flights</MudText>
-<h1>Statistics for @Id</h1>
+@if (flight is null)
+{
+    <h1>Loading...</h1>
+} else
+{
+    <h1>Statistics for @flight.FlightNumber</h1>
+    <h2>Prices per weekday for specific flight</h2>
+    <h2>Prices per date for specific flight</h2>
+    <h2>Prices per date until flight for specific flight</h2>
+    <h2>Prices per date until flight with flexibility</h2>
+    <h3>Set a flexibility to also check for flights +- X days in the future/past</h3>
+    <h4>(Will be executed immediately)</h4>
+    <MudNumericField @bind-Value="flexibility" Placeholder="Flexibility" Label="+/- Days"/>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => GetPricesWithFlexibility()">Get Stats</MudButton>
+    if (pricesWithFlexibility is not null)
+    {
+        <MudText>OK</MudText>
+    }
+}
 
 @code {
     [Parameter]
     public int Id { get; set; }
+    private HttpClient Http = new HttpClient();
+    private FlightDTO? flight;
+    private int flexibility = 0;
+    private List<DayPrice>? pricesWeekday;
+    private List<DayPrice>? mockPricesWeekday;
+    private List<DayPrice>? pricesDate;
+    private List<DayPrice>? mockPricesDate;
+    private List<DayPrice>? pricesDateUntilFlight;
+    private List<DayPrice>? mockPricesDateUntilFlight;
+    private List<DayPrice>? pricesWithFlexibility;
+    private List<DayPrice>? mockPricesWithFlexibility;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetFlight();
+        await GetPricesWeekday();
+        await GetPricesDate();
+        await GetPricesDateUntilFlight();
+    }
+
+    private async Task GetFlight()
+    {
+        var response = await Http.GetAsync($"https://localhost:7019/api/Flights/{Id}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            flight = JsonSerializer.Deserialize<FlightDTO>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+    }
+
+    private async Task GetPricesWeekday()
+    {
+        var response = await Http.GetAsync($"https://localhost:7019/api/Flights/GetCheapestMostExpensiveWeekday,{Id}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"1 {content}");
+            pricesWeekday = JsonSerializer.Deserialize<List<DayPrice>>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+    }
+
+    private async Task GetPricesDate()
+    {
+        var response = await Http.GetAsync($"https://localhost:7019/api/Flights/GetCheapestMostExpensiveDate,{Id}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"2 {content}");
+            pricesDate = JsonSerializer.Deserialize<List<DayPrice>>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+    }
+
+    private async Task GetPricesDateUntilFlight()
+    {
+        var response = await Http.GetAsync($"https://localhost:7019/api/Flights/GetCheapestMostExpensiveDateUntilFlight,{Id}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"3 {content}");
+            pricesDateUntilFlight = JsonSerializer.Deserialize<List<DayPrice>>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+    }
+
+    private async Task GetPricesWithFlexibility()
+    {
+        var queryParams = new Dictionary<string, string>
+            {
+                { "originId", flight.Origin.AirportId.ToString() },
+                { "destinationId", flight.Destination.AirportId.ToString() },
+                { "flightDate", flight.FlightDepartureTime.ToString("s") },
+                { "flightNumber", flight.FlightNumber },
+                { "flexibility", flexibility.ToString() }
+            };
+        var queryString = string.Join("&", queryParams.Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value)}"));
+        var response = await Http.GetAsync($"https://localhost:7019/api/selenium/getcheapestmostexpensivedatewithflexibility?{queryString}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"4 {content}");
+            pricesWithFlexibility = JsonSerializer.Deserialize<List<DayPrice>>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+    }
 }

@@ -48,9 +48,6 @@ else
         if (response.IsSuccessStatusCode) {
             var content = await response.Content.ReadAsStringAsync();
             flights = JsonSerializer.Deserialize<List<FlightDTO>>(content, new JsonSerializerOptions{PropertyNameCaseInsensitive = true});
-            foreach (FlightDTO flight in flights){
-                Console.WriteLine(flight.FlightNumber);
-            }
         } else {
             Console.WriteLine(response.StatusCode);
         }
