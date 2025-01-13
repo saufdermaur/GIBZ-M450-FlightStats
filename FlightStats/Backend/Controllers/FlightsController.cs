@@ -23,7 +23,7 @@ namespace Backend.Controllers
                     .Include(f => f.Destination)
                     .Include(f => f.Origin)
                     .ToListAsync();
-                return Ok(flights.Select(f => FlightToDTO(f)));
+                return Ok(flights.Select(f => FlightToDTO(f)).ToList());
             }
             catch (Exception)
             {
@@ -235,6 +235,7 @@ namespace Backend.Controllers
         {
             return new AirportDTO
             {
+                AirportId = airport.AirportId,
                 Name = airport.Name,
                 Code = airport.IATA
             };

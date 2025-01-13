@@ -1,0 +1,200 @@
+﻿@page "/settings/{id:int}"
+@using System.Text.Json
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+
+<PageTitle>Settings</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">Flight Settings</MudText>
+<MudText Class="mb-8">Configure the schedule for fetching the latest flight data or remove the flight</MudText>
+
+<MudText Class="mb-3" Typo="Typo.h4">Update Schedule</MudText>
+
+<MudSelect @bind-Value="schedule" Placeholder="Select a schedule" Variant="Variant.Outlined" Label="Schedule">
+    <MudSelectItem Value="@("minute")">Per Minute</MudSelectItem>
+    <MudSelectItem Value="@("hour")">Per Hour</MudSelectItem>
+    <MudSelectItem Value="@("day")">Day of the Month</MudSelectItem>
+    <MudSelectItem Value="@("weekday")">Weekday</MudSelectItem>
+</MudSelect>
+
+@if (schedule == "minute") {
+    <MudSelect @bind-Value="minuteFrequency" Placeholder="Select a frequency" Variant="Variant.Outlined" Label="Minutes">
+        <MudSelectItem Value="@("15")">Every 15 minutes</MudSelectItem>
+        <MudSelectItem Value="@("30")">Every 30 minutes</MudSelectItem>
+    </MudSelect>
+}
+else if (schedule == "hour")
+{
+    <MudSelect @bind-Value="hourFrequency" Placeholder="Select a frequency" Variant="Variant.Outlined" Label="Hours">
+        <MudSelectItem Value="@("1")">Every hour</MudSelectItem>
+        <MudSelectItem Value="@("2")">Every 2 hours</MudSelectItem>
+        <MudSelectItem Value="@("4")">Every 4 hours</MudSelectItem>
+    </MudSelect>
+} else if (schedule == "day") {
+    <MudDatePicker Label="Day" @bind-Date="day" FixYear="@DateTime.Today.Year" FixMonth="@DateTime.Today.Month" DateFormat="dd" />
+    if (day is not null)
+    {
+        <MudTimePicker Label="Time" @bind-Time="time" TimeEditMode="TimeEditMode.Normal" />
+    }
+} else if (schedule == "weekday") {
+    <MudSelect @bind-Value="weekday" Placeholder="Select a weekday" Variant="Variant.Outlined" Label="Week day">
+        <MudSelectItem Value="@("Monday")">Monday</MudSelectItem>
+        <MudSelectItem Value="@("Tuesday")">Tuesday</MudSelectItem>
+        <MudSelectItem Value="@("Wednesday")">Wednesday</MudSelectItem>
+        <MudSelectItem Value="@("Thursday")">Thursday</MudSelectItem>
+        <MudSelectItem Value="@("Friday")">Friday</MudSelectItem>
+        <MudSelectItem Value="@("Saturday")">Saturday</MudSelectItem>
+        <MudSelectItem Value="@("Sunday")">Sunday</MudSelectItem>
+    </MudSelect>
+    if (weekday != "" && weekday is not null) {
+        <MudTimePicker Label="Time" @bind-Time="time" TimeEditMode="TimeEditMode.Normal" />
+    }
+} else {
+
+}
+
+@if (DisplayUpdateButton())
+{
+    <br />
+    <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Update" OnClick="async () => await UpdateSchedule()">Update Schedule</MudButton>
+}
+
+<MudText Class="mb-3 mt-5" Typo="Typo.h4">Remove Flight</MudText>
+<MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete" OnClick="async () => await DeleteFlightConfirmation()">Delete Flight</MudButton>
+
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    private string schedule;
+    private string minuteFrequency;
+    private string hourFrequency;
+    private DateTime? day;
+    private string weekday;
+    private TimeSpan? time;
+    private HttpClient Http = new HttpClient();
+    private FlightDTO flight;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await Http.GetAsync($"https://localhost:7019/api/Flights/{Id}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            flight = JsonSerializer.Deserialize<FlightDTO>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+    }
+
+    private async Task DeleteFlightConfirmation()
+    {
+        var parameters = new DialogParameters<DeleteDialog>
+        {
+            { x => x.ContentText, "Do you really want to delete this flight? This process cannot be undone." },
+            { x => x.ButtonText, "Delete" },
+            { x => x.Color, Color.Error }
+        };
+
+        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+        var dialog = await DialogService.ShowAsync<DeleteDialog>("Delete", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await DeleteFlight();
+        }
+    }
+
+    private bool DisplayUpdateButton()
+    {
+        return (schedule == "minute" && minuteFrequency != null) ||
+               (schedule == "hour" && hourFrequency != null) ||
+               (schedule == "day" && day != null && time != null) ||
+               (schedule == "weekday" && weekday != null && time != null);
+    }
+
+    private async Task DeleteFlight()
+    {
+        var response = await Http.DeleteAsync($"https://localhost:7019/api/Selenium/DeleteJobFlightAndAllInfo,{Id}");
+        if (response.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("/watchlist");
+        }
+    }
+
+    private async Task UpdateSchedule()
+    {
+        string cronExpression = GenerateCronExpression();
+        var queryParams = new Dictionary<string, string>
+            {
+                { "originId", flight.Origin.AirportId.ToString() },
+                { "destinationId", flight.Destination.AirportId.ToString() },
+                { "flightDate", flight.FlightDepartureTime.ToString("s") },
+                { "flightNumber", flight.FlightNumber },
+                { "cronExpression", cronExpression }
+            };
+        var queryString = string.Join("&", queryParams.Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value)}"));
+        Console.WriteLine(queryString);
+        var response = await Http.PostAsync($"https://localhost:7019/api/selenium/neworupdatejobflight?{queryString}", null);
+        NavigationManager.NavigateTo("/watchlist");
+
+    }
+
+    private string GenerateCronExpression()
+    {
+        string minuteExpression = "*";
+        string hourExpression = "*";
+        string dayExpression = "*";
+        string monthExpression = "*";
+        string weekdayExpression = "*";
+
+        if (schedule == "minute")
+        {
+            minuteExpression = $"*/{minuteFrequency}";
+        } else if (schedule == "hour")
+        {
+            int currentMinute = DateTime.Now.Minute;
+            minuteExpression = $"{currentMinute}";
+            hourExpression = $"*/{hourFrequency}";
+        } else if (schedule == "day")
+        {
+            int calendarDay = day.GetValueOrDefault().Day;
+            int hoursValue = time.GetValueOrDefault().Hours;
+            int minutesValue = time.GetValueOrDefault().Minutes;
+            minuteExpression = $"{minutesValue}";
+            hourExpression = $"{hoursValue}";
+            dayExpression = $"{calendarDay}";
+        } else if (schedule == "weekday")
+        {
+            int hoursValue = time.GetValueOrDefault().Hours;
+            int minutesValue = time.GetValueOrDefault().Minutes;
+            minuteExpression = $"{minutesValue}";
+            hourExpression = $"{hoursValue}";
+            weekdayExpression = GetWeekDay(weekday);
+        }
+
+        return $"{minuteExpression} {hourExpression} {dayExpression} {monthExpression} {weekdayExpression}";
+    }
+
+    private string GetWeekDay(string weekday)
+    {
+        switch (weekday)
+        {
+            case "Monday":
+                return "0";
+            case "Tuesday":
+                return "1";
+            case "Wednesday":
+                return "2";
+            case "Thursday":
+                return "3";
+            case "Friday":
+                return "4";
+            case "Saturday":
+                return "5";
+            case "Sunday":
+                return "6";
+            default:
+                return "*";
+        }
+    }
+}
