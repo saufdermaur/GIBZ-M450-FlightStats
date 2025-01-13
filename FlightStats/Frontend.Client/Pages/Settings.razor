@@ -1,11 +1,12 @@
 ﻿@page "/settings/{id:int}"
 @using System.Text.Json
 @inject NavigationManager NavigationManager
+@inject IDialogService DialogService
 
-<PageTitle>Schedule</PageTitle>
+<PageTitle>Settings</PageTitle>
 
-<MudText Typo="Typo.h3" GutterBottom="true">App Schedule</MudText>
-<MudText Class="mb-8">Configure the schedule for fetching the latest flight data</MudText>
+<MudText Typo="Typo.h3" GutterBottom="true">Flight Settings</MudText>
+<MudText Class="mb-8">Configure the schedule for fetching the latest flight data or remove the flight</MudText>
 
 <MudText Class="mb-3" Typo="Typo.h4">Update Schedule</MudText>
 
@@ -58,6 +59,9 @@ else if (schedule == "hour")
     <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Update" OnClick="async () => await UpdateSchedule()">Update Schedule</MudButton>
 }
 
+<MudText Class="mb-3 mt-5" Typo="Typo.h4">Remove Flight</MudText>
+<MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete" OnClick="async () => await DeleteFlightConfirmation()">Delete Flight</MudButton>
+
 
 @code {
     [Parameter]
@@ -83,12 +87,40 @@ else if (schedule == "hour")
         }
     }
 
+    private async Task DeleteFlightConfirmation()
+    {
+        var parameters = new DialogParameters<DeleteDialog>
+        {
+            { x => x.ContentText, "Do you really want to delete this flight? This process cannot be undone." },
+            { x => x.ButtonText, "Delete" },
+            { x => x.Color, Color.Error }
+        };
+
+        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+        var dialog = await DialogService.ShowAsync<DeleteDialog>("Delete", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await DeleteFlight();
+        }
+    }
+
     private bool DisplayUpdateButton()
     {
         return (schedule == "minute" && minuteFrequency != null) ||
                (schedule == "hour" && hourFrequency != null) ||
                (schedule == "day" && day != null && time != null) ||
                (schedule == "weekday" && weekday != null && time != null);
+    }
+
+    private async Task DeleteFlight()
+    {
+        var response = await Http.DeleteAsync($"https://localhost:7019/api/Selenium/DeleteJobFlightAndAllInfo,{Id}");
+        if (response.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("/watchlist");
+        }
     }
 
     private async Task UpdateSchedule()
