@@ -93,7 +93,7 @@ else
     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => GetPricesWithFlexibility()">Get Stats</MudButton>
     if (pricesWithFlexibility is not null)
     {
-        <MudText>OK</MudText>
+        <MudChart ChartType="ChartType.Bar" ChartSeries="@flexibleChartSeries" @bind-SelectedIndex="indexFlexible" XAxisLabels="@xAxisLabelsWithFlexibility.ToArray()" Width="100%" Height="350px" />
     }
 }
 
@@ -175,7 +175,11 @@ else
     };
 
     private List<DayPrice>? pricesWithFlexibility;                    
-    private List<string> XAxisLabelsWithFlexibility = new List<string>();
+    private List<string> xAxisLabelsWithFlexibility = new List<string>();
+    private List<double> actualPriceList = new List<double>();
+    private List<double> flexiblePricesList = new List<double>();
+    private List<ChartSeries>? flexibleChartSeries;
+    private int indexFlexible = -1;
 
 
     protected override async Task OnInitializedAsync()
@@ -298,30 +302,31 @@ else
             var content = await response.Content.ReadAsStringAsync();
             Console.WriteLine($"4 {content}");
             pricesWithFlexibility = JsonSerializer.Deserialize<List<DayPrice>>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            if (pricesWithFlexibility is not null)
+            {
+                int count = pricesWithFlexibility.Count();
+                int idx = pricesWithFlexibility.FindIndex(p => p.Day == flight.FlightDepartureTime);
+                if (idx == -1) return;
+                for (int i = 0; i < count; i++)
+                {
+                    if (idx == i)
+                    {
+                        actualPriceList.Add(pricesWithFlexibility[i].Avg);
+                        flexiblePricesList.Add(0.0);
+                    }
+                    else
+                    {
+                        actualPriceList.Add(0.0);
+                        flexiblePricesList.Add(pricesWithFlexibility[i].Avg);
+                    }
+                    xAxisLabelsWithFlexibility.Add(pricesWithFlexibility[i].Day.ToShortTimeString());
+                }
+                flexibleChartSeries = new List<ChartSeries>
+                {
+                    new ChartSeries {Name = "Actual", Data = actualPriceList.ToArray() },
+                    new ChartSeries {Name = "Flexible", Data = flexiblePricesList.ToArray()}
+                };
+            }
         }
-    }
-
-    private void GeneratePricesWeekday()
-    {
-        if (pricesWeekday is null)
-        {
-            return;
-        }
-        
-    }
-
-    private void DisplayPricesDate()
-    {
-
-    }
-
-    private void DisplayPricesDateUntilFlight()
-    {
-
-    }
-
-    private void DisplayPricesWithFlexibility()
-    {
-
     }
 }
