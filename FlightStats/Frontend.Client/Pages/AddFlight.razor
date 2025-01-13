@@ -1,7 +1,9 @@
 ﻿@page "/add"
 @using System.Text.Json
 @using System.Text
+@using Frontend.Client.Services
 @inject NavigationManager NavigationManager
+@inject IAirportService AirportService
 
 <PageTitle>Watchlist</PageTitle>
 
@@ -137,28 +139,7 @@
 
     private async Task<IEnumerable<AirportDTO>> SearchAirport(string query, CancellationToken token)
     {
-        if (string.IsNullOrEmpty(query))
-        {
-            return Array.Empty<AirportDTO>();
-        }
-
-        try
-        {
-            var response = await Http.GetFromJsonAsync<List<AirportDTO>>($"https://localhost:7019/api/Airports/search?query={query}");
-            if (response is not null)
-            {
-                Console.WriteLine(response);
-                return response;
-            }
-            else
-            {
-                return Array.Empty<AirportDTO>();
-            }
-        } catch (Exception ex)
-        {
-            Console.WriteLine($"Error fetching airports: {ex.Message}");
-            return Array.Empty<AirportDTO>();
-        }
+        return await AirportService.SearchAirport(query);
     }
 
     private async Task ValidateAndSubmit()
