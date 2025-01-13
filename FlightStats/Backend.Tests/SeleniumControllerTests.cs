@@ -32,11 +32,10 @@ namespace Backend.Tests
             _dbContext = new FlightStatsDbContext(options);
 
             GlobalConfiguration.Configuration.UseMemoryStorage();
-            BackgroundJobServer server = new BackgroundJobServer();
 
             _mockSeleniumFlights = new Mock<ISeleniumFlights>();
 
-            Airport airport1 = new Airport
+            Airport airport1 = new()
             {
                 AirportId = 1,
                 Name = "Test Airport 1",
@@ -50,7 +49,7 @@ namespace Backend.Tests
                 Timezone = "Test/Timezone"
             };
 
-            Airport airport2 = new Airport
+            Airport airport2 = new()
             {
                 AirportId = 2,
                 Name = "Test Airport 2",
@@ -82,20 +81,19 @@ namespace Backend.Tests
             int destinationId = 2;
             DateTime flightDate = DateTime.Parse("2025-01-02T15:30:00");
 
-            List<FlightDTO> flightDTOs = new List<FlightDTO>
-            {
+            List<FlightDTO> flightDTOs =
+            [
                 new FlightDTO { FlightId = 1, FlightNumber = "Flight 1", Origin = FlightsController.AirportToDTO(_airport1), Destination = FlightsController.AirportToDTO(_airport2) },
                 new FlightDTO { FlightId = 2, FlightNumber = "Flight 2", Origin = FlightsController.AirportToDTO(_airport1), Destination = FlightsController.AirportToDTO(_airport2) },
-            };
+            ];
 
-            _mockSeleniumFlights.Setup(s => s.GetAllFlights(It.IsAny<Airport>(), It.IsAny<Airport>(), It.IsAny<DateTime>()))
-                .Returns(flightDTOs);
+            _mockSeleniumFlights.Setup(s => s.GetAllFlights(It.IsAny<Airport>(), It.IsAny<Airport>(), It.IsAny<DateTime>())).Returns(flightDTOs);
 
             // Act
             IActionResult result = await _controller.GetAllFlights(originId, destinationId, flightDate);
 
             // Assert
-            OkObjectResult okResult = result as OkObjectResult;
+            OkObjectResult? okResult = result as OkObjectResult;
             Assert.IsNotNull(okResult);
             Assert.AreEqual(200, okResult.StatusCode);
 
@@ -116,7 +114,7 @@ namespace Backend.Tests
             IActionResult result = await _controller.GetAllFlights(originId, destinationId, flightDate);
 
             // Assert
-            BadRequestObjectResult badRequestResult = result as BadRequestObjectResult;
+            BadRequestObjectResult? badRequestResult = result as BadRequestObjectResult;
             Assert.IsNotNull(badRequestResult);
             Assert.AreEqual(400, badRequestResult.StatusCode);
             Assert.AreEqual("Origin and destination Ids must be positive integers.", badRequestResult.Value);
@@ -134,7 +132,7 @@ namespace Backend.Tests
             IActionResult result = await _controller.GetAllFlights(originId, destinationId, flightDate);
 
             // Assert
-            NotFoundObjectResult notFoundResult = result as NotFoundObjectResult;
+            NotFoundObjectResult? notFoundResult = result as NotFoundObjectResult;
             Assert.IsNotNull(notFoundResult);
             Assert.AreEqual(404, notFoundResult.StatusCode);
             Assert.AreEqual("One or both airports not found.", notFoundResult.Value);
@@ -148,14 +146,13 @@ namespace Backend.Tests
             int destinationId = 2;
             DateTime flightDate = DateTime.Parse("2025-01-02T15:30:00");
 
-            _mockSeleniumFlights.Setup(s => s.GetAllFlights(It.IsAny<Airport>(), It.IsAny<Airport>(), It.IsAny<DateTime>()))
-                .Returns((List<FlightDTO>)null);
+            _mockSeleniumFlights.Setup(s => s.GetAllFlights(It.IsAny<Airport>(), It.IsAny<Airport>(), It.IsAny<DateTime>())).Returns(value: null);
 
             // Act
             IActionResult result = await _controller.GetAllFlights(originId, destinationId, flightDate);
 
             // Assert
-            NotFoundObjectResult notFoundResult = result as NotFoundObjectResult;
+            NotFoundObjectResult? notFoundResult = result as NotFoundObjectResult;
             Assert.IsNotNull(notFoundResult);
             Assert.AreEqual(404, notFoundResult.StatusCode);
             Assert.AreEqual("No flights found", notFoundResult.Value);
@@ -169,8 +166,7 @@ namespace Backend.Tests
             int destinationId = 2;
             DateTime flightDate = DateTime.Parse("2025-01-02T15:30:00");
 
-            _mockSeleniumFlights.Setup(s => s.GetAllFlights(It.IsAny<Airport>(), It.IsAny<Airport>(), It.IsAny<DateTime>()))
-                .Throws(new Exception("Test exception"));
+            _mockSeleniumFlights.Setup(s => s.GetAllFlights(It.IsAny<Airport>(), It.IsAny<Airport>(), It.IsAny<DateTime>())).Throws(new Exception("Test exception"));
 
             // Act
             IActionResult result = await _controller.GetAllFlights(originId, destinationId, flightDate);
@@ -185,7 +181,6 @@ namespace Backend.Tests
 
         #region NewOrUpdateJobFlightAsync
 
-
         [TestMethod]
         public async Task NewOrUpdateJobFlightAsync_ValidParameters_ReturnsOkResult()
         {
@@ -196,17 +191,15 @@ namespace Backend.Tests
             string flightNumber = "FlightTest123";
             string cronExpression = "0 0 * * *";
 
+            FlightDTO flightDetails = new() { FlightId = 1, FlightNumber = flightNumber, Origin = FlightsController.AirportToDTO(_airport1), Destination = FlightsController.AirportToDTO(_airport2) };
 
-            FlightDTO flightDetails = new FlightDTO { FlightId = 1, FlightNumber = flightNumber, Origin = FlightsController.AirportToDTO(_airport1), Destination = FlightsController.AirportToDTO(_airport2) };
-
-            _mockSeleniumFlights.Setup(s => s.GetSpecificFlight(It.IsAny<Airport>(), It.IsAny<Airport>(), It.IsAny<DateTime>(), It.IsAny<string>()))
-                .Returns(flightDetails);
+            _mockSeleniumFlights.Setup(s => s.GetSpecificFlight(It.IsAny<Airport>(), It.IsAny<Airport>(), It.IsAny<DateTime>(), It.IsAny<string>())).Returns(flightDetails);
 
             // Act
             IActionResult result = await _controller.NewOrUpdateJobFlightAsync(originId, destinationId, flightDate, flightNumber, cronExpression);
 
             // Assert
-            OkResult okResult = result as OkResult;
+            OkResult? okResult = result as OkResult;
             Assert.IsNotNull(okResult);
             Assert.AreEqual(200, okResult.StatusCode);
 
@@ -227,7 +220,7 @@ namespace Backend.Tests
             IActionResult result = await _controller.NewOrUpdateJobFlightAsync(originId, destinationId, flightDate, flightNumber, cronExpression);
 
             // Assert
-            BadRequestObjectResult badRequestResult = result as BadRequestObjectResult;
+            BadRequestObjectResult? badRequestResult = result as BadRequestObjectResult;
             Assert.IsNotNull(badRequestResult);
             Assert.AreEqual(400, badRequestResult.StatusCode);
             Assert.AreEqual("Origin and destination Ids must be positive integers.", badRequestResult.Value);
@@ -247,7 +240,7 @@ namespace Backend.Tests
             IActionResult result = await _controller.NewOrUpdateJobFlightAsync(originId, destinationId, flightDate, flightNumber, cronExpression);
 
             // Assert
-            BadRequestObjectResult badRequestResult = result as BadRequestObjectResult;
+            BadRequestObjectResult? badRequestResult = result as BadRequestObjectResult;
             Assert.IsNotNull(badRequestResult);
             Assert.AreEqual(400, badRequestResult.StatusCode);
             Assert.AreEqual("Origin and destination Ids must be positive integers.", badRequestResult.Value);
@@ -260,14 +253,14 @@ namespace Backend.Tests
             int originId = 1;
             int destinationId = 2;
             DateTime flightDate = DateTime.Parse("2025-01-02T15:30:00");
-            string flightNumber = ""; // Empty flight number
+            string flightNumber = "";
             string cronExpression = "0 0 * * *";
 
             // Act
             IActionResult result = await _controller.NewOrUpdateJobFlightAsync(originId, destinationId, flightDate, flightNumber, cronExpression);
 
             // Assert
-            BadRequestObjectResult badRequestResult = result as BadRequestObjectResult;
+            BadRequestObjectResult? badRequestResult = result as BadRequestObjectResult;
             Assert.IsNotNull(badRequestResult);
             Assert.AreEqual(400, badRequestResult.StatusCode);
             Assert.AreEqual("Flight number cannot be empty.", badRequestResult.Value);
@@ -287,7 +280,7 @@ namespace Backend.Tests
             IActionResult result = await _controller.NewOrUpdateJobFlightAsync(originId, destinationId, flightDate, flightNumber, cronExpression);
 
             // Assert
-            BadRequestObjectResult badRequestResult = result as BadRequestObjectResult;
+            BadRequestObjectResult? badRequestResult = result as BadRequestObjectResult;
             Assert.IsNotNull(badRequestResult);
             Assert.AreEqual(400, badRequestResult.StatusCode);
             Assert.AreEqual("Flight can't be today or in the past", badRequestResult.Value);
@@ -307,7 +300,7 @@ namespace Backend.Tests
             IActionResult result = await _controller.NewOrUpdateJobFlightAsync(originId, destinationId, flightDate, flightNumber, cronExpression);
 
             // Assert
-            NotFoundObjectResult notFoundResult = result as NotFoundObjectResult;
+            NotFoundObjectResult? notFoundResult = result as NotFoundObjectResult;
             Assert.IsNotNull(notFoundResult);
             Assert.AreEqual(404, notFoundResult.StatusCode);
             Assert.AreEqual("Origin or destination not found.", notFoundResult.Value);
@@ -323,14 +316,13 @@ namespace Backend.Tests
             string flightNumber = "NonExistentFlight";
             string cronExpression = "0 0 * * *";
 
-            _mockSeleniumFlights.Setup(s => s.GetSpecificFlight(It.IsAny<Airport>(), It.IsAny<Airport>(), It.IsAny<DateTime>(), It.IsAny<string>()))
-                .Returns((FlightDTO)null);
+            _mockSeleniumFlights.Setup(s => s.GetSpecificFlight(It.IsAny<Airport>(), It.IsAny<Airport>(), It.IsAny<DateTime>(), It.IsAny<string>())).Returns(value: null);
 
             // Act
             IActionResult result = await _controller.NewOrUpdateJobFlightAsync(originId, destinationId, flightDate, flightNumber, cronExpression);
 
             // Assert
-            NotFoundObjectResult notFoundResult = result as NotFoundObjectResult;
+            NotFoundObjectResult? notFoundResult = result as NotFoundObjectResult;
             Assert.IsNotNull(notFoundResult);
             Assert.AreEqual(404, notFoundResult.StatusCode);
             Assert.AreEqual("Flight couldn't be found.", notFoundResult.Value);
@@ -365,7 +357,7 @@ namespace Backend.Tests
             DateTime flightDate = DateTime.Today.AddDays(1);
             string flightNumber = "FlightTest123";
 
-            FlightDTO flightDetails = new FlightDTO
+            FlightDTO flightDetails = new()
             {
                 FlightId = 1,
                 FlightNumber = flightNumber,
@@ -376,18 +368,17 @@ namespace Backend.Tests
                 Price = 100
             };
 
-            _mockSeleniumFlights.Setup(s => s.GetSpecificFlight(It.IsAny<Airport>(), It.IsAny<Airport>(), It.IsAny<DateTime>(), It.IsAny<string>()))
-                .Returns(flightDetails);
+            _mockSeleniumFlights.Setup(s => s.GetSpecificFlight(It.IsAny<Airport>(), It.IsAny<Airport>(), It.IsAny<DateTime>(), It.IsAny<string>())).Returns(flightDetails);
 
             // Act
             await _controller.TrackNewFlightAndSaveJob(originId, destinationId, flightDate, flightNumber);
 
             // Assert
-            Flight? dbFlight = await _dbContext.Flights.FirstOrDefaultAsync(f => f.FlightNumber == flightNumber);
+            Flight? dbFlight = await _dbContext.Flights.FirstOrDefaultAsync(_ => _.FlightNumber == flightNumber);
             Assert.IsNotNull(dbFlight);
             Assert.AreEqual(flightNumber, dbFlight.FlightNumber);
 
-            FlightData? dbFlightData = await _dbContext.FlightData.FirstOrDefaultAsync(f => f.FlightId == dbFlight.FlightId);
+            FlightData? dbFlightData = await _dbContext.FlightData.FirstOrDefaultAsync(_ => _.FlightId == dbFlight.FlightId);
             Assert.IsNotNull(dbFlightData);
             Assert.AreEqual(flightDetails.Price, dbFlightData.Price);
         }
@@ -401,7 +392,7 @@ namespace Backend.Tests
             DateTime flightDate = DateTime.Today.AddDays(1);
             string flightNumber = "FlightTest123";
 
-            FlightDTO flightDetails = new FlightDTO
+            FlightDTO flightDetails = new()
             {
                 FlightId = 1,
                 FlightNumber = flightNumber,
@@ -420,7 +411,7 @@ namespace Backend.Tests
 
             // Assert
             // Verify that a new flight was not added to the database
-            Flight? dbFlight = await _dbContext.Flights.FirstOrDefaultAsync(f => f.FlightNumber == flightNumber);
+            Flight? dbFlight = await _dbContext.Flights.FirstOrDefaultAsync(_ => _.FlightNumber == flightNumber);
             Assert.IsNotNull(dbFlight);
             Assert.AreEqual(flightNumber, dbFlight.FlightNumber);
             Assert.AreEqual(1, _dbContext.Flights.Count(f => f.FlightNumber == flightNumber));
@@ -429,7 +420,6 @@ namespace Backend.Tests
         #endregion
 
         #region DeleteJobFlight
-
 
         [TestMethod]
         public void DeleteJobFlight_FlightNumberIsEmpty_ReturnsBadRequest()
@@ -460,9 +450,7 @@ namespace Backend.Tests
 
         #endregion
 
-
         #region DeleteJobFlightAndAllInfo
-
 
         [TestMethod]
         public async Task DeleteJobFlightAndAllInfo_InvalidId_ReturnsBadRequest()
@@ -471,7 +459,7 @@ namespace Backend.Tests
             IActionResult result = await _controller.DeleteJobFlightAndAllInfo(0);
 
             // Assert
-            BadRequestObjectResult badRequest = result as BadRequestObjectResult;
+            BadRequestObjectResult? badRequest = result as BadRequestObjectResult;
             Assert.IsNotNull(badRequest);
             Assert.AreEqual("Id must be a positive integer", badRequest.Value);
         }
@@ -483,7 +471,7 @@ namespace Backend.Tests
             IActionResult result = await _controller.DeleteJobFlightAndAllInfo(999);
 
             // Assert
-            NotFoundObjectResult notFoundResult = result as NotFoundObjectResult;
+            NotFoundObjectResult? notFoundResult = result as NotFoundObjectResult;
             Assert.IsNotNull(notFoundResult);
             Assert.AreEqual("Couldn't find a flight with Id 999", notFoundResult.Value);
         }
@@ -492,7 +480,7 @@ namespace Backend.Tests
         public async Task DeleteJobFlightAndAllInfo_ValidId_FlightDeletedAndJobRemoved()
         {
             // Arrange
-            Flight flight = new Flight
+            Flight flight = new()
             {
                 FlightId = 1,
                 OriginId = 1,

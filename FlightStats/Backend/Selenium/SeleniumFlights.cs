@@ -74,9 +74,8 @@ namespace Backend.Selenium
             {
                 IWebElement closeCheaperFlightsBanner = _webDriver.FindElement(By.XPath("//div[contains(@class,'I0Kcef')]"));
                 closeCheaperFlightsBanner.Click();
-
             }
-            catch (Exception) { }
+            catch { }
 
             // Filter nach abflugzeit
             IWebElement sortierButton = _webDriver.FindElement(By.XPath("//button[@aria-label='Nach beliebtesten Flügen sortiert, Sortierreihenfolge ändern.']"));
@@ -90,7 +89,7 @@ namespace Backend.Selenium
             Thread.Sleep(1000);
         }
 
-        public List<FlightDTO> GetAllFlights(Airport originAirport, Airport destinationAirport, DateTime flightDate)
+        public List<FlightDTO>? GetAllFlights(Airport originAirport, Airport destinationAirport, DateTime flightDate)
         {
             List<FlightDTO> FetchedFlights = [];
 
@@ -102,7 +101,6 @@ namespace Backend.Selenium
 
                 foreach (IWebElement flightObj in listOfFlights)
                 {
-
                     if (flightObj.Text.IsNullOrEmpty())
                         continue;
 
@@ -129,7 +127,7 @@ namespace Backend.Selenium
                     string price = flightObj.FindElement(By.XPath(".//div[contains(@class, 'BVAVmf I11szd Qr8X4d')]//div[contains(@class, 'YMlIz FpEdX')]/span")).Text;
                     int number = int.Parse(Regex.Match(price, @"\d+").Value);
 
-                    FlightDTO flight = new FlightDTO
+                    FlightDTO flight = new()
                     {
                         Origin = new AirportDTO() { Code = originAirport.IATA, Name = originAirport.Name },
                         Destination = new AirportDTO() { Code = destinationAirport.IATA, Name = destinationAirport.Name },
@@ -142,7 +140,7 @@ namespace Backend.Selenium
                     FetchedFlights.Add(flight);
                 }
             }
-            catch (Exception)
+            catch
             {
                 throw;
             }
@@ -158,16 +156,17 @@ namespace Backend.Selenium
         {
             try
             {
-                List<FlightDTO> allFlights = GetAllFlights(originAirport, destinationAirport, flightDate);
+                List<FlightDTO>? allFlights = GetAllFlights(originAirport, destinationAirport, flightDate);
+
+                if (allFlights is null)
+                    return null;
 
                 FlightDTO? findFLight = allFlights.Find(_ => _.FlightNumber.Equals(flightNumber));
 
                 if (findFLight is not null)
-                {
                     return findFLight;
-                }
             }
-            catch (Exception)
+            catch
             {
                 throw;
             }
@@ -181,7 +180,7 @@ namespace Backend.Selenium
 
         public List<DayPrice> GetSpeGetCheapestMostExpensiveDateWithFlexibilitycificFlight(Airport originAirport, Airport destinationAirport, DateTime flightDate, string flightNumber, int flexibility)
         {
-            List<DayPrice> dayPrices = new List<DayPrice>();
+            List<DayPrice> dayPrices = [];
 
             try
             {
@@ -194,16 +193,14 @@ namespace Backend.Selenium
                         FlightDTO? flightDetails = GetSpecificFlight(originAirport, destinationAirport, date, flightNumber);
 
                         if (flightDetails is not null)
-                        {
                             dayPrices.Add(FlightDataToDayPrice(flightDetails));
-                        }
 
                         _webDriver.Navigate().GoToUrl("https://www.google.com/travel/flights");
                     }
                 }
                 return dayPrices;
             }
-            catch (Exception)
+            catch
             {
                 throw;
             }

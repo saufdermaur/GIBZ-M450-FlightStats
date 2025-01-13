@@ -15,25 +15,23 @@ namespace Backend.Controllers
         public async Task<IActionResult> SearchAirports(string query)
         {
             if (string.IsNullOrEmpty(query))
-            {
                 return BadRequest("Query parameter is required.");
-            }
 
             try
             {
                 List<Airport> airports = await _context.Airports
-                    .Where(a => a.Name.Contains(query) || a.IATA.Contains(query) || a.City.Contains(query))
+                    .Where(_ => _.Name.Contains(query) || _.IATA.Contains(query) || _.City.Contains(query))
                     .Take(10)
                     .ToListAsync();
 
-                return Ok(airports.Select(a => AirportToDTO(a)).ToList());
+                return Ok(airports.Select(_ => AirportToDTO(_)).ToList());
             }
             catch (Exception)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request.");
             }
         }
-        private AirportDTO AirportToDTO(Airport airport)
+        private static AirportDTO AirportToDTO(Airport airport)
         {
             return new AirportDTO
             {

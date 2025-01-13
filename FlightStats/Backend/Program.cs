@@ -49,7 +49,6 @@ builder.Services.AddScoped<IWebDriver>(serviceProvider =>
     return new FirefoxDriver(options);
 });
 
-
 WebApplication app = builder.Build();
 
 if (app.Environment.IsDevelopment())

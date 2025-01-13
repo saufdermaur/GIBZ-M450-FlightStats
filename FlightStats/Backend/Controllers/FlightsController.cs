@@ -20,10 +20,10 @@ namespace Backend.Controllers
             try
             {
                 List<Flight> flights = await _context.Flights
-                    .Include(f => f.Destination)
-                    .Include(f => f.Origin)
+                    .Include(_ => _.Destination)
+                    .Include(_ => _.Origin)
                     .ToListAsync();
-                return Ok(flights.Select(f => FlightToDTO(f)).ToList());
+                return Ok(flights.Select(_ => FlightToDTO(_)).ToList());
             }
             catch (Exception)
             {
@@ -36,21 +36,17 @@ namespace Backend.Controllers
         public async Task<IActionResult> GetFlight(int id)
         {
             if (id <= 0)
-            {
                 return BadRequest("Flight Id must be a positive integer.");
-            }
 
             try
             {
                 Flight? flight = await _context.Flights
-                    .Include(f => f.Destination)
-                    .Include(f => f.Origin)
-                    .FirstOrDefaultAsync(m => m.FlightId == id);
+                    .Include(_ => _.Destination)
+                    .Include(_ => _.Origin)
+                    .FirstOrDefaultAsync(_ => _.FlightId == id);
 
                 if (flight is null)
-                {
                     return NotFound($"Flight with Id {id} not found.");
-                }
 
                 return Ok(FlightToDTO(flight));
             }
@@ -69,23 +65,19 @@ namespace Backend.Controllers
         public async Task<IActionResult> GetCheapestMostExpensiveWeekday(int id)
         {
             if (id <= 0)
-            {
                 return BadRequest("Flight Id must be a positive integer.");
-            }
 
             try
             {
                 Flight? flight = await _context.Flights
-                    .Include(f => f.Destination)
-                    .Include(f => f.Origin)
-                    .FirstOrDefaultAsync(m => m.FlightId == id);
+                    .Include(_ => _.Destination)
+                    .Include(_ => _.Origin)
+                    .FirstOrDefaultAsync(_ => _.FlightId == id);
 
                 if (flight is null)
-                {
                     return NotFound($"Flight with Id {id} not found.");
-                }
 
-                List<FlightData> flightDatas = await _context.FlightData.Where(f => f.FlightId == id).ToListAsync();
+                List<FlightData> flightDatas = await _context.FlightData.Where(_ => _.FlightId == id).ToListAsync();
                 List<DayPrice> values = [];
 
                 foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
@@ -93,9 +85,7 @@ namespace Backend.Controllers
                     List<FlightData> dayDatas = flightDatas.Where(_ => _.FetchedTime.DayOfWeek == day).OrderBy(_ => _.Price).ToList();
 
                     if (dayDatas.Count <= 0)
-                    {
                         values.Add(new DayPrice() { Day = GetDateFromWeekDay(day), Min = 0, Avg = 0, Max = 0 });
-                    }
                     else
                     {
                         int min = dayDatas.First().Price;
@@ -118,31 +108,25 @@ namespace Backend.Controllers
         public async Task<IActionResult> GetCheapestMostExpensiveDate(int id)
         {
             if (id <= 0)
-            {
                 return BadRequest("Flight Id must be a positive integer.");
-            }
 
             try
             {
                 Flight? flight = await _context.Flights
-                    .Include(f => f.Destination)
-                    .Include(f => f.Origin)
+                    .Include(_ => _.Destination)
+                    .Include(_ => _.Origin)
                     .FirstOrDefaultAsync(m => m.FlightId == id);
 
                 if (flight is null)
-                {
                     return NotFound($"Flight with Id {id} not found.");
-                }
 
-                List<FlightData> values = await _context.FlightData.Where(f => f.FlightId == id).OrderBy(_ => _.Price).ToListAsync();
+                List<FlightData> values = await _context.FlightData.Where(_ => _.FlightId == id).OrderBy(_ => _.Price).ToListAsync();
 
                 FlightData? cheapest = values.FirstOrDefault();
                 FlightData? mostExpensive = values.LastOrDefault();
 
                 if (cheapest is null || mostExpensive is null)
-                {
                     return NotFound();
-                }
 
                 List<DayPrice> lowestHighest =
                 [
@@ -163,23 +147,19 @@ namespace Backend.Controllers
         public async Task<IActionResult> GetCheapestMostExpensiveDateUntilFlight(int id)
         {
             if (id <= 0)
-            {
                 return BadRequest("Flight Id must be a positive integer.");
-            }
 
             try
             {
                 Flight? flight = await _context.Flights
-                    .Include(f => f.Destination)
-                    .Include(f => f.Origin)
-                    .FirstOrDefaultAsync(m => m.FlightId == id);
+                    .Include(_ => _.Destination)
+                    .Include(_ => _.Origin)
+                    .FirstOrDefaultAsync(_ => _.FlightId == id);
 
                 if (flight is null)
-                {
                     return NotFound($"Flight with Id {id} not found.");
-                }
 
-                List<FlightData> flightDatas = await _context.FlightData.Where(f => f.FlightId == id).ToListAsync();
+                List<FlightData> flightDatas = await _context.FlightData.Where(_ => _.FlightId == id).ToListAsync();
                 List<FlightData> flightDates = flightDatas.DistinctBy(_ => _.FetchedTime.Date).ToList();
 
                 List<DayPrice> values = [];
@@ -205,6 +185,23 @@ namespace Backend.Controllers
 
         #region HelperMethods
 
+        public static AirportDTO AirportToDTO(Airport airport)
+        {
+            return new AirportDTO
+            {
+                AirportId = airport.AirportId,
+                Name = airport.Name,
+                Code = airport.IATA
+            };
+        }
+
+        public static DateTime GetDateFromWeekDay(DayOfWeek dayOfWeek)
+        {
+            DateTime date = DateTime.Today;
+            int offset = date.DayOfWeek - dayOfWeek;
+            return date.AddDays(-offset);
+        }
+
         private static FlightDTO FlightToDTO(Flight flight)
         {
             return new FlightDTO
@@ -219,28 +216,6 @@ namespace Backend.Controllers
             };
         }
 
-        private static FlightDataDTO FlightDataToDTO(FlightData flightData)
-        {
-            return new FlightDataDTO
-            {
-                FlightDataId = flightData.FlightDataId,
-                FlightId = flightData.FlightId,
-                FetchedTime = flightData.FetchedTime,
-                Price = flightData.Price,
-                Flight = FlightToDTO(flightData.Flight)
-            };
-        }
-
-        public static AirportDTO AirportToDTO(Airport airport)
-        {
-            return new AirportDTO
-            {
-                AirportId = airport.AirportId,
-                Name = airport.Name,
-                Code = airport.IATA
-            };
-        }
-
         private static DayPrice FlightDataToDayPrice(FlightData flightData)
         {
             return new DayPrice
@@ -248,13 +223,6 @@ namespace Backend.Controllers
                 Day = flightData.FetchedTime.Date,
                 Avg = flightData.Price
             };
-        }
-
-        public static DateTime GetDateFromWeekDay(DayOfWeek dayOfWeek)
-        {
-            DateTime date = DateTime.Today;
-            int offset = date.DayOfWeek - dayOfWeek;
-            return date.AddDays(-offset);
         }
 
         #endregion

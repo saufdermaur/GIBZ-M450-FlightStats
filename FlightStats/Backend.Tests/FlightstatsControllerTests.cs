@@ -21,11 +21,11 @@ namespace Backend.Tests
                 .UseInMemoryDatabase(databaseName)
                 .Options;
 
-            FlightStatsDbContext dbContext = new FlightStatsDbContext(options);
+            FlightStatsDbContext dbContext = new(options);
 
             #region Airports
 
-            Airport airport1 = new Airport
+            Airport airport1 = new()
             {
                 AirportId = 1,
                 Name = "Test Airport 1",
@@ -39,7 +39,7 @@ namespace Backend.Tests
                 Timezone = "Test/Timezone"
             };
 
-            Airport airport2 = new Airport
+            Airport airport2 = new()
             {
                 AirportId = 2,
                 Name = "Test Airport 2",
@@ -57,7 +57,7 @@ namespace Backend.Tests
 
             #region Flights
 
-            Flight flight1 = new Flight
+            Flight flight1 = new()
             {
                 FlightId = 1,
                 OriginId = 1,
@@ -69,7 +69,7 @@ namespace Backend.Tests
                 Destination = airport2,
             };
 
-            Flight flight2 = new Flight
+            Flight flight2 = new()
             {
                 FlightId = 2,
                 OriginId = 2,
@@ -85,7 +85,7 @@ namespace Backend.Tests
 
             #region FlightData
 
-            FlightData flightDataForFlight1_1 = new FlightData
+            FlightData flightDataForFlight1_1 = new()
             {
                 FlightDataId = 1,
                 FlightId = 1,
@@ -94,7 +94,7 @@ namespace Backend.Tests
                 Flight = flight1
             };
 
-            FlightData flightDataForFlight1_2 = new FlightData
+            FlightData flightDataForFlight1_2 = new()
             {
                 FlightDataId = 2,
                 FlightId = 1,
@@ -103,7 +103,7 @@ namespace Backend.Tests
                 Flight = flight1
             };
 
-            FlightData flightDataForFlight1_3 = new FlightData
+            FlightData flightDataForFlight1_3 = new()
             {
                 FlightDataId = 3,
                 FlightId = 1,
@@ -112,7 +112,7 @@ namespace Backend.Tests
                 Flight = flight1
             };
 
-            FlightData flightDataForFlight1_4 = new FlightData
+            FlightData flightDataForFlight1_4 = new()
             {
                 FlightDataId = 4,
                 FlightId = 1,
@@ -121,7 +121,7 @@ namespace Backend.Tests
                 Flight = flight1
             };
 
-            FlightData flightDataForFlight1_5 = new FlightData
+            FlightData flightDataForFlight1_5 = new()
             {
                 FlightDataId = 5,
                 FlightId = 1,
@@ -130,7 +130,7 @@ namespace Backend.Tests
                 Flight = flight1
             };
 
-            FlightData flightDataForFlight1_6 = new FlightData
+            FlightData flightDataForFlight1_6 = new()
             {
                 FlightDataId = 6,
                 FlightId = 1,
@@ -254,7 +254,7 @@ namespace Backend.Tests
             int validId = 1;
 
             Mock<FlightStatsDbContext> mockDbContext = new(new DbContextOptions<FlightStatsDbContext>());
-            mockDbContext.Setup(m => m.Flights).Throws(new Exception());
+            mockDbContext.Setup(_ => _.Flights).Throws(new Exception());
             FlightsController controller = new(mockDbContext.Object);
 
             // Act
@@ -291,26 +291,25 @@ namespace Backend.Tests
 
             foreach (DayPrice dayPrice in dayPrices)
             {
-                Assert.IsNotNull(dayPrice.Day);
                 Assert.IsTrue(dayPrice.Min >= 0);
                 Assert.IsTrue(dayPrice.Avg >= 0);
                 Assert.IsTrue(dayPrice.Max >= 0);
             }
 
             DayPrice monday = dayPrices.Where(_ => _.Day.DayOfWeek.Equals(DayOfWeek.Monday)).Single();
-            Assert.AreEqual(monday.Min, 50);
-            Assert.AreEqual(monday.Avg, 100);
-            Assert.AreEqual(monday.Max, 150);
+            Assert.AreEqual(50, monday.Min);
+            Assert.AreEqual(100, monday.Avg);
+            Assert.AreEqual(150, monday.Max);
 
             DayPrice tuesday = dayPrices.Where(_ => _.Day.DayOfWeek.Equals(DayOfWeek.Tuesday)).Single();
-            Assert.AreEqual(tuesday.Min, 100);
-            Assert.AreEqual(tuesday.Avg, 100);
-            Assert.AreEqual(tuesday.Max, 100);
+            Assert.AreEqual(100, tuesday.Min);
+            Assert.AreEqual(100, tuesday.Avg);
+            Assert.AreEqual(100, tuesday.Max);
 
             DayPrice wednesday = dayPrices.Where(_ => _.Day.DayOfWeek.Equals(DayOfWeek.Wednesday)).Single();
-            Assert.AreEqual(wednesday.Min, 150);
-            Assert.AreEqual(wednesday.Avg, 225);
-            Assert.AreEqual(wednesday.Max, 300);
+            Assert.AreEqual(150, wednesday.Min);
+            Assert.AreEqual(225, wednesday.Avg);
+            Assert.AreEqual(300, wednesday.Max);
         }
 
         [TestMethod]
@@ -349,7 +348,7 @@ namespace Backend.Tests
             // Arrange
             int validId = 1;
             Mock<FlightStatsDbContext> mockDbContext = new(new DbContextOptions<FlightStatsDbContext>());
-            mockDbContext.Setup(m => m.Flights).Throws(new Exception());
+            mockDbContext.Setup(_ => _.Flights).Throws(new Exception());
             FlightsController controller = new(mockDbContext.Object);
 
             // Act
@@ -426,8 +425,8 @@ namespace Backend.Tests
             // Arrange
             int validId = 1;
             Mock<FlightStatsDbContext> mockDbContext = new(new DbContextOptions<FlightStatsDbContext>());
-            mockDbContext.Setup(m => m.Flights).Throws(new Exception());
-            FlightsController controller = new FlightsController(mockDbContext.Object);
+            mockDbContext.Setup(_ => _.Flights).Throws(new Exception());
+            FlightsController controller = new(mockDbContext.Object);
 
             // Act
             IActionResult result = await controller.GetCheapestMostExpensiveDate(validId);
@@ -502,7 +501,7 @@ namespace Backend.Tests
             int flightId = 1;
 
             Mock<FlightStatsDbContext> mockDbContext = new(new DbContextOptions<FlightStatsDbContext>());
-            mockDbContext.Setup(m => m.Flights).Throws(new Exception());
+            mockDbContext.Setup(_ => _.Flights).Throws(new Exception());
             FlightsController controller = new(mockDbContext.Object);
 
             // Act

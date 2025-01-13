@@ -1,6 +1,4 @@
-﻿
-
-@inject ISnackbar Snackbar
+﻿@inject ISnackbar Snackbar
 
 <MudDialog>
     <DialogContent>
@@ -14,7 +12,7 @@
 
 @code {
     [CascadingParameter]
-    private MudDialogInstance MudDialog { get; set; }
+    private MudDialogInstance _mudDialog { get; set; }
 
     [Parameter]
     public string ContentText { get; set; }
@@ -28,8 +26,8 @@
     private void Submit()
     {
         Snackbar.Add("Flight Deleted", Severity.Success);
-        MudDialog.Close(DialogResult.Ok(true));
+        _mudDialog.Close(DialogResult.Ok(true));
     }
 
-    private void Cancel() => MudDialog.Cancel();
+    private void Cancel() => _mudDialog.Cancel();
 }

@@ -7,7 +7,7 @@
     {
         public static IEnumerable<Airport> LoadAirports(string filePath)
         {
-            List<Airport> airports = new List<Airport>();
+            List<Airport> airports = [];
             string[] lines = File.ReadAllLines(filePath);
 
             foreach (string line in lines)
@@ -32,5 +32,4 @@
             return airports;
         }
     }
-
 }

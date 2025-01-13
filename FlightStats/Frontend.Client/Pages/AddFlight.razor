@@ -16,75 +16,75 @@
             <MudAutocomplete Class="mb-5"
                              T="AirportDTO"
                              Label="Search Departure Airport"
-                             @bind-Value="origin"
+                             @bind-Value="_origin"
                              Placeholder="Type Airport Name, IATA code or city..."
                              SearchFunc="SearchAirport"
                              ToStringFunc="@((AirportDTO a) => $"{a.Name} ({a.Code})")"
-                             Error="origin is null && validated"
+                             Error="_origin is null && _validated"
                              ErrorText="Need to select a departure airport" />
 
             <MudAutocomplete Class="mb-5" T="AirportDTO"
                              Label="Search Arrival Airport"
-                             @bind-Value="destination"
+                             @bind-Value="_destination"
                              Placeholder="Type Airport Name, IATA code or city..."
                              SearchFunc="SearchAirport"
                              ToStringFunc="@((AirportDTO a) => $"{a.Name} ({a.Code})")"
-                             Error="destination is null && validated"
+                             Error="_destination is null && _validated"
                              ErrorText="Need to select an arrival airport" />
 
             <MudTextField Class="mb-5" T="string"
                           Label="Flight Number"
-                          @bind-Value="flightNumber"
-                          Error="flightNumber is null && validated"
+                          @bind-Value="_flightNumber"
+                          Error="_flightNumber is null && _validated"
                           ErrorText="Need to enter a valid flight number e.g. XY 1234" />
 
             <MudDatePicker Class="mb-5" Label="Departure Date"
-                           @bind-Date="flightDate"
-                           Error="flightDate is null && validated"
+                           @bind-Date="_flightDate"
+                           Error="_flightDate is null && _validated"
                            ErrorText="Need to select a departure date"
                            Editable="true"
                            ImmediateText="true" />
 
             <MudTimePicker Class="mb-5" Label="Flight Time"
-                           @bind-Time="flightTime"
-                           Error="flightTime is null && validated"
+                           @bind-Time="_flightTime"
+                           Error="_flightTime is null && _validated"
                            ErrorText="Need to select a departure time"
                            Editable="true"
                            ImmediateText="true" />
 
-            <MudSelect @bind-Value="schedule" Placeholder="Select a schedule" Variant="Variant.Outlined" Label="Schedule" Error="ValidSchedule() == false && validated" ErrorText="Need to select a valid schedule">
+            <MudSelect @bind-Value="_schedule" Placeholder="Select a schedule" Variant="Variant.Outlined" Label="Schedule" Error="ValidSchedule() == false && _validated" ErrorText="Need to select a valid schedule">
                 <MudSelectItem Value="@("minute")">Per Minute</MudSelectItem>
                 <MudSelectItem Value="@("hour")">Per Hour</MudSelectItem>
                 <MudSelectItem Value="@("day")">Day of the Month</MudSelectItem>
                 <MudSelectItem Value="@("weekday")">Weekday</MudSelectItem>
             </MudSelect>
 
-            @if (schedule == "minute")
+            @if (_schedule == "minute")
             {
-                <MudSelect @bind-Value="minuteFrequency" Placeholder="Select a frequency" Variant="Variant.Outlined" Label="Minutes">
+                <MudSelect @bind-Value="_minuteFrequency" Placeholder="Select a frequency" Variant="Variant.Outlined" Label="Minutes">
                     <MudSelectItem Value="@("15")">Every 15 minutes</MudSelectItem>
                     <MudSelectItem Value="@("30")">Every 30 minutes</MudSelectItem>
                 </MudSelect>
             }
-            else if (schedule == "hour")
+            else if (_schedule == "hour")
             {
-                <MudSelect @bind-Value="hourFrequency" Placeholder="Select a frequency" Variant="Variant.Outlined" Label="Hours">
+                <MudSelect @bind-Value="_hourFrequency" Placeholder="Select a frequency" Variant="Variant.Outlined" Label="Hours">
                     <MudSelectItem Value="@("1")">Every hour</MudSelectItem>
                     <MudSelectItem Value="@("2")">Every 2 hours</MudSelectItem>
                     <MudSelectItem Value="@("4")">Every 4 hours</MudSelectItem>
                 </MudSelect>
             }
-            else if (schedule == "day")
+            else if (_schedule == "day")
             {
-                <MudDatePicker Label="Day" @bind-Date="day" FixYear="@DateTime.Today.Year" FixMonth="@DateTime.Today.Month" DateFormat="dd" Editable="true" ImmediateText="true"/>
-                if (day is not null)
+                <MudDatePicker Label="Day" @bind-Date="_day" FixYear="@DateTime.Today.Year" FixMonth="@DateTime.Today.Month" DateFormat="dd" Editable="true" ImmediateText="true"/>
+                if (_day is not null)
                 {
-                    <MudTimePicker Label="Time" @bind-Time="time" TimeEditMode="TimeEditMode.Normal" Editable="true" ImmediateText="true"  />
+                    <MudTimePicker Label="Time" @bind-Time="_time" TimeEditMode="TimeEditMode.Normal" Editable="true" ImmediateText="true"  />
                 }
             }
-            else if (schedule == "weekday")
+            else if (_schedule == "weekday")
             {
-                <MudSelect @bind-Value="weekday" Placeholder="Select a weekday" Variant="Variant.Outlined" Label="Week day">
+                <MudSelect @bind-Value="_weekday" Placeholder="Select a weekday" Variant="Variant.Outlined" Label="Week day">
                     <MudSelectItem Value="@("Monday")">Monday</MudSelectItem>
                     <MudSelectItem Value="@("Tuesday")">Tuesday</MudSelectItem>
                     <MudSelectItem Value="@("Wednesday")">Wednesday</MudSelectItem>
@@ -93,9 +93,9 @@
                     <MudSelectItem Value="@("Saturday")">Saturday</MudSelectItem>
                     <MudSelectItem Value="@("Sunday")">Sunday</MudSelectItem>
                 </MudSelect>
-                if (weekday != "" && weekday is not null)
+                if (_weekday != "" && _weekday is not null)
                 {
-                    <MudTimePicker Label="Time" @bind-Time="time" TimeEditMode="TimeEditMode.Normal" Editable="true" ImmediateText="true" />
+                    <MudTimePicker Label="Time" @bind-Time="_time" TimeEditMode="TimeEditMode.Normal" Editable="true" ImmediateText="true" />
                 }
             }
             else
@@ -112,30 +112,29 @@
 
 
 @code {
-    private HttpClient Http = new HttpClient();
-    private AirportDTO? origin;
-    private AirportDTO? destination;
-    private string? flightNumber;
-    private DateTime? flightDate;
-    private TimeSpan? flightTime;
-    private string? schedule;
-    private string? minuteFrequency;
-    private string? hourFrequency;
-    private DateTime? day;
-    private string? weekday;
-    private TimeSpan? time;
-    private string? cronExpression;
-    private bool validated = false;
+    private HttpClient _http = new HttpClient();
+    private AirportDTO? _origin;
+    private AirportDTO? _destination;
+    private string? _flightNumber;
+    private DateTime? _flightDate;
+    private TimeSpan? _flightTime;
+    private string? _schedule;
+    private string? _minuteFrequency;
+    private string? _hourFrequency;
+    private DateTime? _day;
+    private string? _weekday;
+    private TimeSpan? _time;
+    private string? _cronExpression;
+    private bool _validated = false;
 
-    private bool departureInvalid = false;
-    private bool arrivalInvalid = false;
-    private bool flightNumberInvalid = false;
-    private bool flightDateInvalid = false;
-    private bool flightTimeInvalid = false;
-    private bool scheduleInvalid = false;
+    private bool _departureInvalid = false;
+    private bool _arrivalInvalid = false;
+    private bool _flightNumberInvalid = false;
+    private bool _flightDateInvalid = false;
+    private bool _flightTimeInvalid = false;
+    private bool _scheduleInvalid = false;
 
     protected override async Task OnInitializedAsync() {}
-
 
     private async Task<IEnumerable<AirportDTO>> SearchAirport(string query, CancellationToken token)
     {
@@ -144,39 +143,37 @@
 
     private async Task ValidateAndSubmit()
     {
-        cronExpression = GenerateCronExpression();
+        _cronExpression = GenerateCronExpression();
         if (InvalidData())
-        {
             return;
-        }
         else
         {
-            var queryParams = new Dictionary<string, string>
+            Dictionary<string, string> queryParams = new Dictionary<string, string>
             {
-                { "originId", origin.AirportId.ToString() },
-                { "destinationId", destination.AirportId.ToString() },
-                { "flightDate", (flightDate.GetValueOrDefault() + flightTime.GetValueOrDefault()).ToString("s") },
-                { "flightNumber", flightNumber },
-                { "cronExpression", cronExpression }
+                { "originId", _origin.AirportId.ToString() },
+                { "destinationId", _destination.AirportId.ToString() },
+                { "flightDate", (_flightDate.GetValueOrDefault() + _flightTime.GetValueOrDefault()).ToString("s") },
+                { "flightNumber", _flightNumber },
+                { "cronExpression", _cronExpression }
             };
 
-            var queryString = string.Join("&", queryParams.Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value)}"));
-            var response = await Http.PostAsync($"https://localhost:7019/api/selenium/neworupdatejobflight?{queryString}", null);
+            string queryString = string.Join("&", queryParams.Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value)}"));
+            HttpResponseMessage response = await _http.PostAsync($"https://localhost:7019/api/selenium/neworupdatejobflight?{queryString}", null);
             NavigationManager.NavigateTo("/watchlist");
         }
     }
 
     private bool InvalidData()
     {
-        validated = true;
-        departureInvalid = origin is null;
-        arrivalInvalid = destination is null;
-        flightNumberInvalid = flightNumber is null;
-        flightDateInvalid = flightDate is null;
-        flightTimeInvalid = flightTime is null;
-        scheduleInvalid = cronExpression is null || !ValidSchedule();
+        _validated = true;
+        _departureInvalid = _origin is null;
+        _arrivalInvalid = _destination is null;
+        _flightNumberInvalid = _flightNumber is null;
+        _flightDateInvalid = _flightDate is null;
+        _flightTimeInvalid = _flightTime is null;
+        _scheduleInvalid = _cronExpression is null || !ValidSchedule();
 
-        return departureInvalid || arrivalInvalid || flightNumberInvalid || flightDateInvalid || flightTimeInvalid || scheduleInvalid;
+        return _departureInvalid || _arrivalInvalid || _flightNumberInvalid || _flightDateInvalid || _flightTimeInvalid || _scheduleInvalid;
     }
 
     private string GenerateCronExpression()
@@ -187,32 +184,30 @@
         string monthExpression = "*";
         string weekdayExpression = "*";
 
-        if (schedule == "minute")
-        {
-            minuteExpression = $"*/{minuteFrequency}";
-        }
-        else if (schedule == "hour")
+        if (_schedule == "minute")
+            minuteExpression = $"*/{_minuteFrequency}";
+        else if (_schedule == "hour")
         {
             int currentMinute = DateTime.Now.Minute;
             minuteExpression = $"{currentMinute}";
-            hourExpression = $"*/{hourFrequency}";
+            hourExpression = $"*/{_hourFrequency}";
         }
-        else if (schedule == "day")
+        else if (_schedule == "day")
         {
-            int calendarDay = day.GetValueOrDefault().Day;
-            int hoursValue = time.GetValueOrDefault().Hours;
-            int minutesValue = time.GetValueOrDefault().Minutes;
+            int calendarDay = _day.GetValueOrDefault().Day;
+            int hoursValue = _time.GetValueOrDefault().Hours;
+            int minutesValue = _time.GetValueOrDefault().Minutes;
             minuteExpression = $"{minutesValue}";
             hourExpression = $"{hoursValue}";
             dayExpression = $"{calendarDay}";
         }
-        else if (schedule == "weekday")
+        else if (_schedule == "weekday")
         {
-            int hoursValue = time.GetValueOrDefault().Hours;
-            int minutesValue = time.GetValueOrDefault().Minutes;
+            int hoursValue = _time.GetValueOrDefault().Hours;
+            int minutesValue = _time.GetValueOrDefault().Minutes;
             minuteExpression = $"{minutesValue}";
             hourExpression = $"{hoursValue}";
-            weekdayExpression = GetWeekDay(weekday);
+            weekdayExpression = GetWeekDay(_weekday);
         }
 
         return $"{minuteExpression} {hourExpression} {dayExpression} {monthExpression} {weekdayExpression}";
@@ -243,9 +238,9 @@
 
     private bool ValidSchedule()
     {
-        return (schedule == "minute" && minuteFrequency != null) ||
-               (schedule == "hour" && hourFrequency != null) ||
-               (schedule == "day" && day != null && time != null) ||
-               (schedule == "weekday" && weekday != null && time != null);
+        return (_schedule == "minute" && _minuteFrequency is not null) ||
+               (_schedule == "hour" && _hourFrequency is not null) ||
+               (_schedule == "day" && _day is not null && _time is not null) ||
+               (_schedule == "weekday" && _weekday is not null && _time is not null);
     }
 }

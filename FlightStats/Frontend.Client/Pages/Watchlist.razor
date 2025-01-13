@@ -10,13 +10,13 @@
 <MudButton Class="mb-3" Variant="Variant.Filled" Color="Color.Success" OnClick="() => NavigateToAddFlight()">Add new flight</MudButton>
 <br />
 
-@if (flights == null)
+@if (_flights is null)
 {
     <MudProgressCircular Color="Color.Default" Indeterminate="true" />
 }
 else
 {
-    <MudTable Items="flights" Hover="true" Breakpoint="Breakpoint.Sm">
+    <MudTable Items="_flights" Hover="true" Breakpoint="Breakpoint.Sm">
         <HeaderContent>
             <MudTh>Date</MudTh>
             <MudTh>Flight Number</MudTh>
@@ -38,16 +38,16 @@ else
 }
 
 @code {
-    private HttpClient Http = new HttpClient();
-    private List<FlightDTO>? flights = new List<FlightDTO>();
+    private HttpClient _http = new HttpClient();
+    private List<FlightDTO>? _flights = new List<FlightDTO>();
 
     protected override async Task OnInitializedAsync() => await GetFlights();
 
     private async Task GetFlights() {
-        var response = await Http.GetAsync("https://localhost:7019/api/Flights");
+        HttpResponseMessage response = await _http.GetAsync("https://localhost:7019/api/Flights");
         if (response.IsSuccessStatusCode) {
-            var content = await response.Content.ReadAsStringAsync();
-            flights = JsonSerializer.Deserialize<List<FlightDTO>>(content, new JsonSerializerOptions{PropertyNameCaseInsensitive = true});
+            string content = await response.Content.ReadAsStringAsync();
+            _flights = JsonSerializer.Deserialize<List<FlightDTO>>(content, new JsonSerializerOptions{PropertyNameCaseInsensitive = true});
         } else {
             Console.WriteLine(response.StatusCode);
         }
