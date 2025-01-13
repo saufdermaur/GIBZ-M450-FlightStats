@@ -1,10 +1,332 @@
-﻿@page "/statistic"
+﻿@page "/statistic/{id:int}"
+@using System.Text.Json
 
 <PageTitle>Statistics</PageTitle>
 
 <MudText Typo="Typo.h3" GutterBottom="true">Flight Statistics</MudText>
 <MudText Class="mb-8">Get various statistics for your tracked flights</MudText>
+@if (flight is null)
+{
+    <h1>Loading...</h1>
+} 
+else
+{
+    <h1>Statistics for @flight.FlightNumber</h1>
+    <MudItem Class="mb-10 mt-10"><h2>Prices per weekday for specific flight</h2></MudItem>
+    if (weekdaySeries is null && !mockData)
+    {
+        <h4>Loading...</h4>
+    }
+    else if (mockData)
+    {
+        <MudSwitch @bind-Value="mockData" Label="Switch to real data"></MudSwitch>
+
+        <MudChart ChartType="ChartType.Bar" ChartSeries="@mockWeekdaySeries" @bind-SelectedIndex="indexWeekday" XAxisLabels="@xAxisLabelsWeekday" Width="100%" Height="350px" />
+
+    }
+    else
+    {
+        <MudSwitch @bind-Value="mockData" Label="Switch to mocked data"></MudSwitch>
+
+        <MudChart ChartType="ChartType.Bar" ChartSeries="@weekdaySeries" @bind-SelectedIndex="indexWeekday" XAxisLabels="@xAxisLabelsWeekday" Width="100%" Height="350px" />
+    }
+    <MudItem Class="mb-10 mt-10"><h2>Prices per date for specific flight</h2></MudItem>
+    if ((cheapestDate is null || mostExpensiveDate is null) && !mockData)
+    {
+        <h4>Loading...</h4>
+    }
+    else if (mockData)
+    {
+        <MudSwitch @bind-Value="mockData" Label="Switch to real data"></MudSwitch>
+
+        <MudGrid>
+            <MudItem xs="6">
+                <MudText Typo="Typo.h6" Color="Color.Error">
+                    Most Expensive Date: @mockMostExpensiveDate.ToLongDateString()
+                </MudText>
+            </MudItem>
+            <MudItem xs="6">
+                <MudText Typo="Typo.h6" Color="Color.Success">
+                    Cheapest Date: @mockCheapestDate.ToLongDateString()
+                </MudText>
+            </MudItem>
+        </MudGrid>
+    }
+    else
+    {
+        <MudSwitch @bind-Value="mockData" Label="Switch to mocked data"></MudSwitch>
+
+        <MudGrid>
+            <MudItem xs="6">
+                <MudText Typo="Typo.h6" Color="Color.Error">
+                    Most Expensive Date: @mostExpensiveDate.GetValueOrDefault().ToLongDateString()
+                </MudText>
+            </MudItem>
+            <MudItem xs="6">
+                <MudText Typo="Typo.h6" Color="Color.Success">
+                    Cheapest Date: @cheapestDate.GetValueOrDefault().ToLongDateString()
+                </MudText>
+            </MudItem>
+        </MudGrid>
+    }
+    <MudItem Class="mb-10 mt-10"><h2>Prices per date until flight at @flight.FlightDepartureTime.ToLongDateString()</h2></MudItem>
+    if (datesSeries is null && !mockData)
+    {
+        <h4>Loading...</h4>
+    }
+    else if (mockData)
+    {
+        <MudSwitch @bind-Value="mockData" Label="Switch to real data"></MudSwitch>
+
+        <MudChart ChartType="ChartType.Line" ChartSeries="@mockSeriesUntilFlight" @bind-SelectedIndex="indexWeekday" XAxisLabels="@mockedXAxisUntilFlight.ToArray()" Width="100%" Height="350px" />
+    }
+    else
+    {
+        <MudSwitch @bind-Value="mockData" Label="Switch to mocked data"></MudSwitch>
+
+        <MudChart ChartType="ChartType.Line" ChartSeries="@datesSeries" @bind-SelectedIndex="indexDate" XAxisLabels="@XAxisLabelsDateUntilFlight.ToArray()" Width="100%" Height="350px" />
+    }
+    <MudItem Class="mb-10 mt-10"><h2>Prices per date until flight with flexibility</h2></MudItem>
+    <h3>Set a flexibility to also check for flights +- X days in the future/past</h3>
+    <h4>(Will be executed immediately)</h4>
+    <MudNumericField @bind-Value="flexibility" Placeholder="Flexibility" Label="+/- Days"/>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => GetPricesWithFlexibility()">Get Stats</MudButton>
+    if (pricesWithFlexibility is not null)
+    {
+        <MudChart ChartType="ChartType.Bar" ChartSeries="@flexibleChartSeries" @bind-SelectedIndex="indexFlexible" XAxisLabels="@xAxisLabelsWithFlexibility.ToArray()" Width="100%" Height="350px" />
+    }
+}
 
 @code {
+    [Parameter]
+    public int Id { get; set; }
+    private HttpClient Http = new HttpClient();
+    private FlightDTO? flight;
+    private int flexibility = 0;
+    private bool mockData = true;
+    private List<DayPrice> mockPrices = new List<DayPrice>
+    {
+        new DayPrice { Day = new DateTime(2025, 2, 3), Min = 120.5, Avg = 150.0, Max = 180.0 },
+        new DayPrice { Day = new DateTime(2025, 2, 4), Min = 115.0, Avg = 140.0, Max = 175.0 },
+        new DayPrice { Day = new DateTime(2025, 2, 5), Min = 130.0, Avg = 160.0, Max = 200.0 },
+        new DayPrice { Day = new DateTime(2025, 2, 6), Min = 125.0, Avg = 155.0, Max = 190.0 },
+        new DayPrice { Day = new DateTime(2025, 2, 7), Min = 140.0, Avg = 170.0, Max = 210.0 },
+        new DayPrice { Day = new DateTime(2025, 2, 8), Min = 135.0, Avg = 165.0, Max = 205.0 },
+        new DayPrice { Day = new DateTime(2025, 2, 9), Min = 145.0, Avg = 175.0, Max = 215.0 },
+        new DayPrice { Day = new DateTime(2025, 2, 10), Min = 150.0, Avg = 180.0, Max = 220.0 },
+        new DayPrice { Day = new DateTime(2025, 2, 11), Min = 140.0, Avg = 165.0, Max = 210.0 },
+        new DayPrice { Day = new DateTime(2025, 2, 12), Min = 155.0, Avg = 185.0, Max = 225.0 },
+        new DayPrice { Day = new DateTime(2025, 2, 13), Min = 160.0, Avg = 190.0, Max = 230.0 },
+        new DayPrice { Day = new DateTime(2025, 2, 14), Min = 170.0, Avg = 200.0, Max = 240.0 },
+        new DayPrice { Day = new DateTime(2025, 2, 15), Min = 165.0, Avg = 195.0, Max = 235.0 },
+        new DayPrice { Day = new DateTime(2025, 2, 16), Min = 175.0, Avg = 205.0, Max = 245.0 },
+        new DayPrice { Day = new DateTime(2025, 2, 17), Min = 180.0, Avg = 210.0, Max = 250.0 },
+        new DayPrice { Day = new DateTime(2025, 2, 18), Min = 170.0, Avg = 200.0, Max = 240.0 },
+        new DayPrice { Day = new DateTime(2025, 2, 19), Min = 185.0, Avg = 215.0, Max = 255.0 },
+        new DayPrice { Day = new DateTime(2025, 2, 20), Min = 190.0, Avg = 220.0, Max = 260.0 },
+        new DayPrice { Day = new DateTime(2025, 2, 21), Min = 200.0, Avg = 230.0, Max = 270.0 },
+        new DayPrice { Day = new DateTime(2025, 2, 22), Min = 195.0, Avg = 225.0, Max = 265.0 },
+        new DayPrice { Day = new DateTime(2025, 2, 23), Min = 210.0, Avg = 240.0, Max = 280.0 }
+    };
+    private static double[] mockWeekdayMin = new double[] { 140.0, 165.0, 145.0, 155.0, 172.5, 157.5, 146.66666666666666 };
+    private static double[] mockWeekdayAvg = new double[] { 170.0, 195.0, 175.0, 185.0, 202.5, 187.5, 176.66666666666666 };
+    private static double[] mockWeekdayMax = new double[] { 200.0, 225.0, 205.0, 215.0, 235.0, 217.5, 206.66666666666666 };
 
+    private List<ChartSeries> mockWeekdaySeries = new List<ChartSeries>
+    {
+        new ChartSeries {Name = "Min", Data = mockWeekdayMin},
+        new ChartSeries {Name = "Avg", Data = mockWeekdayAvg},
+        new ChartSeries {Name = "Max", Data = mockWeekdayMax}
+    };
+
+    private List<DayPrice>? pricesWeekday;
+    private int indexWeekday = -1;
+    private string[] xAxisLabelsWeekday = new string[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+    private double[] minWeekday = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+    private double[] avgWeekday = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+    private double[] maxWeekday = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+    private List<ChartSeries>? weekdaySeries;
+
+    private List<DayPrice>? pricesDate;
+    private DateTime? cheapestDate;
+    private DateTime? mostExpensiveDate;
+    private DateTime mockCheapestDate = new DateTime(2025, 2, 4);
+    private DateTime mockMostExpensiveDate = new DateTime(2025, 2, 23);
+
+    private List<DayPrice>? pricesDateUntilFlight;
+    private int indexDate = -1;
+    private List<double> pricesPerDayUntilFlight = new List<double>();
+    private List<string> XAxisLabelsDateUntilFlight = new List<string>();
+    private List<ChartSeries>? datesSeries;
+    private static List<double> mockedPricesUntilFlight = new List<double> { 210.0, 200.0, 215.0, 220.0, 230.0, 225.0, 240.0 };
+    private List<string> mockedXAxisUntilFlight = new List<string>
+    {
+        new DateTime(2025, 2, 16).ToString("d"),
+        new DateTime(2025, 2, 17).ToString("d"),
+        new DateTime(2025, 2, 18).ToString("d"),
+        new DateTime(2025, 2, 19).ToString("d"),
+        new DateTime(2025, 2, 20).ToString("d"),
+        new DateTime(2025, 2, 21).ToString("d"),
+        new DateTime(2025, 2, 22).ToString("d"),
+    };
+    private List<ChartSeries> mockSeriesUntilFlight = new List<ChartSeries>
+    {
+        new ChartSeries {Data = mockedPricesUntilFlight.ToArray()}
+    };
+
+    private List<DayPrice>? pricesWithFlexibility;                    
+    private List<string> xAxisLabelsWithFlexibility = new List<string>();
+    private List<double> actualPriceList = new List<double>();
+    private List<double> flexiblePricesList = new List<double>();
+    private List<ChartSeries>? flexibleChartSeries;
+    private int indexFlexible = -1;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetFlight();
+        await GetPricesWeekday();
+        await GetPricesDate();
+        await GetPricesDateUntilFlight();
+    }
+
+    private async Task GetFlight()
+    {
+        var response = await Http.GetAsync($"https://localhost:7019/api/Flights/{Id}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            flight = JsonSerializer.Deserialize<FlightDTO>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+    }
+
+    private async Task GetPricesWeekday()
+    {
+        var response = await Http.GetAsync($"https://localhost:7019/api/Flights/GetCheapestMostExpensiveWeekday,{Id}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"1 {content}");
+            pricesWeekday = JsonSerializer.Deserialize<List<DayPrice>>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            if (pricesWeekday is not null)
+            {
+                for (int i = 0; i < 7; i++)
+                {
+                    minWeekday[i] = pricesWeekday[i].Min;
+                    avgWeekday[i] = pricesWeekday[i].Avg;
+                    minWeekday[i] = pricesWeekday[i].Max;
+                }
+                weekdaySeries = new List<ChartSeries>()
+            {
+                new ChartSeries() { Name = "Min", Data = pricesWeekday.Select(p => p.Min).ToArray() },
+                new ChartSeries() { Name = "Avg", Data = pricesWeekday.Select(p => p.Avg).ToArray() },
+                new ChartSeries() { Name = "Max", Data = pricesWeekday.Select(p => p.Max).ToArray() }
+            };
+            }
+        }
+    }
+
+    private async Task GetPricesDate()
+    {
+        var response = await Http.GetAsync($"https://localhost:7019/api/Flights/GetCheapestMostExpensiveDate,{Id}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"2 {content}");
+            pricesDate = JsonSerializer.Deserialize<List<DayPrice>>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            if (pricesDate is not null)
+            {
+                double maxPrice = 0.0;
+                double minPrice = 100000.0;
+                foreach (DayPrice dayPrice in pricesDate)
+                {
+                    if (dayPrice.Avg > maxPrice)
+                    {
+                        maxPrice = dayPrice.Avg;
+                        mostExpensiveDate = dayPrice.Day;
+                    }
+                    if (dayPrice.Avg < minPrice)
+                    {
+                        minPrice = dayPrice.Avg;
+                        cheapestDate = dayPrice.Day;
+                    }
+                }
+            }
+        }
+    }
+
+    private async Task GetPricesDateUntilFlight()
+    {
+        var response = await Http.GetAsync($"https://localhost:7019/api/Flights/GetCheapestMostExpensiveDateUntilFlight,{Id}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"3 {content}");
+            pricesDateUntilFlight = JsonSerializer.Deserialize<List<DayPrice>>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            if (pricesDateUntilFlight is not null)
+            {
+                DateTime startDate = pricesDateUntilFlight[0].Day.Date;
+                DateTime endDate = flight.FlightDepartureTime.Date;
+                int it = 0;
+                while (startDate != endDate)
+                {
+                    XAxisLabelsDateUntilFlight.Add(startDate.ToString("d"));
+                    double price = it < pricesDateUntilFlight.Count() ? pricesDateUntilFlight[it].Avg : 0.0;
+                    pricesPerDayUntilFlight.Add(price);
+                    it++;
+                    startDate = startDate.AddDays(1);
+                }
+                datesSeries = new List<ChartSeries>
+                {
+                    new ChartSeries { Data = pricesPerDayUntilFlight.Slice(pricesPerDayUntilFlight.Count()-7, 7).ToArray()}
+                };
+                XAxisLabelsDateUntilFlight = XAxisLabelsDateUntilFlight.ToList().Slice(pricesPerDayUntilFlight.Count() - 7, 7);
+            }
+        }
+    }
+
+    private async Task GetPricesWithFlexibility()
+    {
+        var queryParams = new Dictionary<string, string>
+            {
+                { "originId", flight.Origin.AirportId.ToString() },
+                { "destinationId", flight.Destination.AirportId.ToString() },
+                { "flightDate", flight.FlightDepartureTime.ToString("s") },
+                { "flightNumber", flight.FlightNumber },
+                { "flexibility", flexibility.ToString() }
+            };
+        var queryString = string.Join("&", queryParams.Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value)}"));
+        var response = await Http.GetAsync($"https://localhost:7019/api/selenium/getcheapestmostexpensivedatewithflexibility?{queryString}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"4 {content}");
+            pricesWithFlexibility = JsonSerializer.Deserialize<List<DayPrice>>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            if (pricesWithFlexibility is not null)
+            {
+                int count = pricesWithFlexibility.Count();
+                int idx = pricesWithFlexibility.FindIndex(p => p.Day == flight.FlightDepartureTime);
+                if (idx == -1) return;
+                for (int i = 0; i < count; i++)
+                {
+                    if (idx == i)
+                    {
+                        actualPriceList.Add(pricesWithFlexibility[i].Avg);
+                        flexiblePricesList.Add(0.0);
+                    }
+                    else
+                    {
+                        actualPriceList.Add(0.0);
+                        flexiblePricesList.Add(pricesWithFlexibility[i].Avg);
+                    }
+                    xAxisLabelsWithFlexibility.Add(pricesWithFlexibility[i].Day.ToShortTimeString());
+                }
+                flexibleChartSeries = new List<ChartSeries>
+                {
+                    new ChartSeries {Name = "Actual", Data = actualPriceList.ToArray() },
+                    new ChartSeries {Name = "Flexible", Data = flexiblePricesList.ToArray()}
+                };
+            }
+        }
+    }
 }

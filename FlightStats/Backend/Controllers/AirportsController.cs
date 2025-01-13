@@ -1,6 +1,7 @@
 ﻿using Backend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Shared.DTOs;
 
 namespace Backend.Controllers
 {
@@ -25,12 +26,21 @@ namespace Backend.Controllers
                     .Take(10)
                     .ToListAsync();
 
-                return Ok(airports);
+                return Ok(airports.Select(a => AirportToDTO(a)).ToList());
             }
             catch (Exception)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request.");
             }
+        }
+        private AirportDTO AirportToDTO(Airport airport)
+        {
+            return new AirportDTO
+            {
+                AirportId = airport.AirportId,
+                Code = airport.IATA,
+                Name = airport.Name
+            };
         }
     }
 }

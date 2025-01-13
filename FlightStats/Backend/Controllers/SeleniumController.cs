@@ -55,7 +55,7 @@ namespace Backend.Controllers
         // no try catch because no db or other critical component, hangfire has own exception handling
         // POST: api/Flights/NewOrUpdateJobFlight
         [HttpPost("NewOrUpdateJobFlight")]
-        public async Task<IActionResult> NewOrUpdateJobFlightAsync([FromQuery] int originId, [FromQuery] int destinationId, [FromQuery] DateTime flightDate, [FromQuery] string flightNumber, [FromQuery] Frequency frequency)
+        public async Task<IActionResult> NewOrUpdateJobFlightAsync([FromQuery] int originId, [FromQuery] int destinationId, [FromQuery] DateTime flightDate, [FromQuery] string flightNumber, [FromQuery] string cronExpression)
         {
             if (originId <= 0 || destinationId <= 0)
             {
@@ -87,28 +87,7 @@ namespace Backend.Controllers
                 return NotFound("Flight couldn't be found.");
             }
 
-            Func<string> cronJob;
-
-            if (frequency == Frequency.Minute)
-            {
-                cronJob = Cron.Minutely;
-            }
-            else if (frequency == Frequency.Hour)
-            {
-                cronJob = Cron.Hourly;
-            }
-            else if (frequency == Frequency.Day)
-            {
-                cronJob = Cron.Daily;
-            }
-            else if (frequency == Frequency.Week)
-            {
-                cronJob = Cron.Weekly;
-            }
-            else
-            {
-                cronJob = Cron.Monthly;
-            }
+            Func<string> cronJob = () => cronExpression;
 
             RecurringJob.AddOrUpdate($"JobForFlight_{flightNumber}", () => TrackNewFlightAndSaveJob(originId, destinationId, flightDate, flightNumber), cronJob);
 

@@ -194,7 +194,7 @@ namespace Backend.Tests
             int destinationId = 2;
             DateTime flightDate = DateTime.Today.AddDays(1);
             string flightNumber = "FlightTest123";
-            Frequency frequency = Frequency.Day;
+            string cronExpression = "0 0 * * *";
 
 
             FlightDTO flightDetails = new FlightDTO { FlightId = 1, FlightNumber = flightNumber, Origin = FlightsController.AirportToDTO(_airport1), Destination = FlightsController.AirportToDTO(_airport2) };
@@ -203,7 +203,7 @@ namespace Backend.Tests
                 .Returns(flightDetails);
 
             // Act
-            IActionResult result = await _controller.NewOrUpdateJobFlightAsync(originId, destinationId, flightDate, flightNumber, frequency);
+            IActionResult result = await _controller.NewOrUpdateJobFlightAsync(originId, destinationId, flightDate, flightNumber, cronExpression);
 
             // Assert
             OkResult okResult = result as OkResult;
@@ -221,10 +221,10 @@ namespace Backend.Tests
             int destinationId = 2;
             DateTime flightDate = DateTime.Parse("2025-01-02T15:30:00");
             string flightNumber = "FlightTest123";
-            Frequency frequency = Frequency.Day;
+            string cronExpression = "0 0 * * *";
 
             // Act
-            IActionResult result = await _controller.NewOrUpdateJobFlightAsync(originId, destinationId, flightDate, flightNumber, frequency);
+            IActionResult result = await _controller.NewOrUpdateJobFlightAsync(originId, destinationId, flightDate, flightNumber, cronExpression);
 
             // Assert
             BadRequestObjectResult badRequestResult = result as BadRequestObjectResult;
@@ -241,10 +241,10 @@ namespace Backend.Tests
             int destinationId = 0;
             DateTime flightDate = DateTime.Parse("2025-01-02T15:30:00");
             string flightNumber = "FlightTest123";
-            Frequency frequency = Frequency.Day;
+            string cronExpression = "0 0 * * *";
 
             // Act
-            IActionResult result = await _controller.NewOrUpdateJobFlightAsync(originId, destinationId, flightDate, flightNumber, frequency);
+            IActionResult result = await _controller.NewOrUpdateJobFlightAsync(originId, destinationId, flightDate, flightNumber, cronExpression);
 
             // Assert
             BadRequestObjectResult badRequestResult = result as BadRequestObjectResult;
@@ -261,10 +261,10 @@ namespace Backend.Tests
             int destinationId = 2;
             DateTime flightDate = DateTime.Parse("2025-01-02T15:30:00");
             string flightNumber = ""; // Empty flight number
-            Frequency frequency = Frequency.Day;
+            string cronExpression = "0 0 * * *";
 
             // Act
-            IActionResult result = await _controller.NewOrUpdateJobFlightAsync(originId, destinationId, flightDate, flightNumber, frequency);
+            IActionResult result = await _controller.NewOrUpdateJobFlightAsync(originId, destinationId, flightDate, flightNumber, cronExpression);
 
             // Assert
             BadRequestObjectResult badRequestResult = result as BadRequestObjectResult;
@@ -281,10 +281,10 @@ namespace Backend.Tests
             int destinationId = 2;
             DateTime flightDate = DateTime.Today.AddDays(-1);
             string flightNumber = "FlightTest123";
-            Frequency frequency = Frequency.Day;
+            string cronExpression = "0 0 * * *";
 
             // Act
-            IActionResult result = await _controller.NewOrUpdateJobFlightAsync(originId, destinationId, flightDate, flightNumber, frequency);
+            IActionResult result = await _controller.NewOrUpdateJobFlightAsync(originId, destinationId, flightDate, flightNumber, cronExpression);
 
             // Assert
             BadRequestObjectResult badRequestResult = result as BadRequestObjectResult;
@@ -301,10 +301,10 @@ namespace Backend.Tests
             int destinationId = 3;
             DateTime flightDate = DateTime.Today.AddDays(1);
             string flightNumber = "FlightTest123";
-            Frequency frequency = Frequency.Day;
+            string cronExpression = "0 0 * * *";
 
             // Act
-            IActionResult result = await _controller.NewOrUpdateJobFlightAsync(originId, destinationId, flightDate, flightNumber, frequency);
+            IActionResult result = await _controller.NewOrUpdateJobFlightAsync(originId, destinationId, flightDate, flightNumber, cronExpression);
 
             // Assert
             NotFoundObjectResult notFoundResult = result as NotFoundObjectResult;
@@ -321,13 +321,13 @@ namespace Backend.Tests
             int destinationId = 2;
             DateTime flightDate = DateTime.Today.AddDays(1);
             string flightNumber = "NonExistentFlight";
-            Frequency frequency = Frequency.Day;
+            string cronExpression = "0 0 * * *";
 
             _mockSeleniumFlights.Setup(s => s.GetSpecificFlight(It.IsAny<Airport>(), It.IsAny<Airport>(), It.IsAny<DateTime>(), It.IsAny<string>()))
                 .Returns((FlightDTO)null);
 
             // Act
-            IActionResult result = await _controller.NewOrUpdateJobFlightAsync(originId, destinationId, flightDate, flightNumber, frequency);
+            IActionResult result = await _controller.NewOrUpdateJobFlightAsync(originId, destinationId, flightDate, flightNumber, cronExpression);
 
             // Assert
             NotFoundObjectResult notFoundResult = result as NotFoundObjectResult;

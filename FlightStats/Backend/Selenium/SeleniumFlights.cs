@@ -69,6 +69,15 @@ namespace Backend.Selenium
 
             Thread.Sleep(500);
 
+            // Close banner for cheaper flights that only sometimes pops up
+            try
+            {
+                IWebElement closeCheaperFlightsBanner = _webDriver.FindElement(By.XPath("//div[contains(@class,'I0Kcef')]"));
+                closeCheaperFlightsBanner.Click();
+
+            }
+            catch (Exception) { }
+
             // Filter nach abflugzeit
             IWebElement sortierButton = _webDriver.FindElement(By.XPath("//button[@aria-label='Nach beliebtesten Flügen sortiert, Sortierreihenfolge ändern.']"));
             sortierButton.Click();

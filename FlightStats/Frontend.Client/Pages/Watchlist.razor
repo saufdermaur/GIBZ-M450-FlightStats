@@ -1,9 +1,14 @@
 ﻿@page "/watchlist"
+@using System.Text.Json
+@inject NavigationManager NavigationManager
 
 <PageTitle>Watchlist</PageTitle>
 
 <MudText Typo="Typo.h3" GutterBottom="true">Flights Watchlist</MudText>
-<MudText Class="mb-8">Add or remove flights that you want to track</MudText>
+<MudText Class="mb-8">Add new flights, modify tracking schedules and get price statistics</MudText>
+
+<MudButton Class="mb-3" Variant="Variant.Filled" Color="Color.Success" OnClick="() => NavigateToAddFlight()">Add new flight</MudButton>
+<br />
 
 @if (flights == null)
 {
@@ -17,60 +22,49 @@ else
             <MudTh>Flight Number</MudTh>
             <MudTh>Departure</MudTh>
             <MudTh>Arrival</MudTh>
-            <MudTh>More Info</MudTh>
+            <MudTh></MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd DataLabel="Date">@context.Date</MudTd>
+            <MudTd DataLabel="Date">@context.FlightDepartureTime.Date.ToString("d")</MudTd>
             <MudTd DataLabel="Flight Number">@context.FlightNumber</MudTd>
-            <MudTd DataLabel="Departure">@context.Departure</MudTd>
-            <MudTd DataLabel="Arrival">@context.Arrival</MudTd>
-            <MudTd><MudButton Variant="Variant.Filled" Color="Color.Primary">View</MudButton></MudTd>
+            <MudTd DataLabel="Departure">@context.Origin.Name</MudTd>
+            <MudTd DataLabel="Arrival">@context.Destination.Name</MudTd>
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.QueryStats" OnClick="() => NavigateToStatistic(context.FlightId)"></MudIconButton>
+                <MudIconButton Icon="@Icons.Material.Filled.Settings" OnClick="() => NavigateToSettings(context.FlightId)"></MudIconButton>
+            </MudTd>
         </RowTemplate>
     </MudTable>
 }
 
 @code {
-    private List<Flight>? flights = new List<Flight>();
+    private HttpClient Http = new HttpClient();
+    private List<FlightDTO>? flights = new List<FlightDTO>();
 
-    protected override async Task OnInitializedAsync()
-    {
-        // Simulate asynchronous loading to demonstrate a loading indicator
-        await Task.Delay(500);
-        flights.Add(new Flight
-            {
-                Date = DateOnly.FromDateTime(DateTime.Today),
-                FlightNumber = "VY 6249",
-                Departure = "Zürich",
-                Arrival = "Barcelona"
-            });
-        flights.Add(new Flight
-            {
-                Date = DateOnly.FromDateTime(DateTime.Today),
-                FlightNumber = "VY 6247",
-                Departure = "Zürich",
-                Arrival = "Barcelona"
-            });
-        flights.Add(new Flight
-            {
-                Date = DateOnly.FromDateTime(DateTime.Today),
-                FlightNumber = "LX 1954",
-                Departure = "Zürich",
-                Arrival = "Barcelona"
-            });
-        flights.Add(new Flight
-            {
-                Date = DateOnly.FromDateTime(DateTime.Today),
-                FlightNumber = "LX 1956",
-                Departure = "Zürich",
-                Arrival = "Barcelona"
-            });
+    protected override async Task OnInitializedAsync() => await GetFlights();
+
+    private async Task GetFlights() {
+        var response = await Http.GetAsync("https://localhost:7019/api/Flights");
+        if (response.IsSuccessStatusCode) {
+            var content = await response.Content.ReadAsStringAsync();
+            flights = JsonSerializer.Deserialize<List<FlightDTO>>(content, new JsonSerializerOptions{PropertyNameCaseInsensitive = true});
+        } else {
+            Console.WriteLine(response.StatusCode);
+        }
     }
 
-    private class Flight
+    private void NavigateToSettings(int id)
     {
-        public DateOnly Date { get; set; }
-        public string? FlightNumber { get; set; }
-        public string? Departure { get; set; }
-        public string? Arrival { get; set; }
+        NavigationManager.NavigateTo($"settings/{id}");
+    }
+
+    private void NavigateToStatistic(int id)
+    {
+        NavigationManager.NavigateTo($"statistic/{id}");
+    }
+
+    private void NavigateToAddFlight()
+    {
+        NavigationManager.NavigateTo("add");
     }
 }
