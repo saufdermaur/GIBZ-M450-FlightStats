@@ -1,59 +1,77 @@
-Overview:
+# Flight Tracker
 
+## Overview
+An application that allows users to track flights from Google Flights. The flight data is continuously scraped from Google Flights and stored in a MySQL database. After collecting sufficient data, users can analyze flight trends to:
 
+* Determine the cheapest and most expensive weekdays to buy a ticket.
+* Identify the cheapest and most expensive dates to purchase a ticket.
+* Find the cheapest date to buy a ticket before departure.
+* Analyze the cheapest and most expensive dates with flexibility (± some days before the actual flight).
+
+Swagger API Documentation
+* ![alt text](swaggerEndpoints.png)
+* ![alt text](swaggerFlights.png)
+
+Hangfire (Job Scheduling)
+![alt text](hangfireJob.png)
+![alt text](flightScraping.png)
+
+Frontend Interface
+![alt text](frontend.png)
 
 Architecture:
-
 ![alt text](architecture.png)
 
 
-Workflow:
+## Workflow
 
-1. Allow user to define interval (store to db)
-2. User can set new trackable flight: Set Origin, Set Destination, Date and Time
-	1. Fetch Data for the specified input => dont save anything to db yet => return the available flights to the user
-	2. User selects the flight that he wants to track => save that flight to the db
-3. Let magic (selenium) happen 
-	1. User specified interval gets triggered
-	2. Start background worker 
-	3. Loop over flights in the db (on observe)
-	4. Search for the flight on the specified interval
-	5. If flight found (through selenium) get it's data and store to db
-4. When flight(s) have been tracked, display that data for flight is available 
-5. When the flight gets clicked, let the user make requests on the flight
+1. User Defines Tracking Interval
+	* Store the tracking interval in the database.
+2. User Sets a New Trackable Flight
+	* Define Origin, Destination, Date, and Time.
+	* Fetch available flights based on user input (without saving to the database yet).
+	* User selects the flight they want to track, which is then stored in the database.
+3. Flight Scraping Process (Using Selenium)
+	* The user-specified interval triggers the tracking process.
+	* A background worker starts.
+	* The system loops over the flights stored in the database.
+	* Searches for the flight at the defined interval.
+	* If a flight is found via Selenium, its data is stored in the database.
+4. Data Availability & Analysis
+	* Once flights have been tracked, the data is available for display.
+	* When a flight is selected, users can request detailed analysis.
 
----
+## Data Source
 
-airport data from: https://openflights.org/data
+* Airport data is sourced from: https://openflights.org/data
 
----
+## Setup Instructions
 
-Setup:
+1. Database Setup
+	* Run MySQL in Docker: ```mysql:latest```
+	* MySQL environment variables:
+		* ```MYSQL_ROOT_PASSWORD```
+		* ```MYSQL_DATABASE```
+		* ```MYSQL_USER```
+		* ```MYSQL_PASSWORD```
+	3. Ports: ```3306:3306```
+	4. Data: ```/my/own/datadir:/var/lib/mysql```
+2. Backend Setup
+	1. Open the ```.sln``` project file.
+	2. Install EF Core: ```dotnet tool install --global dotnet-ef```
+	3. Create a database migration in the /Backend directory: ```dotnet ef migrations add InitialCreate```
+	4. Update the connection string in ```Backend/appsettings.json``` and ```Frontend/appsettings.json```.
+	5. Apply database migrations: ```dotnet ef database update```
+3. Start the Application
+	* Run the backend and the frontend through Visual Studio
+4. Access the Application
+	1. Backend
+		* Access API documentation: ```/swagger```
+		* Access job overview: ```/hangfire```
+	2. Frontend
+		* Open the main page: ```/```
 
-1. Setup DB
-	1. Docker "mysql:latest"
-	2. ENV:
-		* MYSQL_ROOT_PASSWORD
-		* MYSQL_DATABASE
-		* MYSQL_USER
-		* MYSQL_PASSWORD
-	3. Ports: 3306:3306
-	4. Data: /my/own/datadir:/var/lib/mysql
-2. Open .sln
-	1. Install EF Core: dotnet tool install --global dotnet-ef
-	2. Make migration in /Backend: dotnet ef migrations add InitialCreate
-	3. Adjust connection string (from step 1.) in /Backend/appsettings.json and Frontend/appsettings.json
-	4. Update db: dotnet ef database update
-3. Start application
-	* Backend
-		* /swagger for api
-		* /hangfire for job overview
-	* Frontend
-		* / for main-page
-
----
-
-Test Flights
+## Test Flights
 
 1. Zürich - Barcelona
 	* Origin: 1678 (ZRH)
